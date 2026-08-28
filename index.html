@@ -97,7 +97,6 @@
                 <h1>已学知识点</h1>
                 <button class="primary" onclick="showAdd()">＋ 添加知识点</button>
             </div>
-
             <div id="knowledgeList"></div>
         </div>
 
@@ -162,36 +161,41 @@
                     ＋ 直接添加知识点
                 </button>
 
-                <label>这次学习完成得怎么样？</label>
+                <!-- 开始倒计时后才显示 -->
+                <div id="studyEvaluation" class="study-evaluation">
+                    <label>这次学习完成得怎么样？</label>
 
-                <div class="result-list">
-                    <label>
-                        <input type="radio" name="studyResult" value="1">
-                        <span>1. 完全不会</span>
-                    </label>
+                    <div class="result-list">
+                        <label>
+                            <input type="radio" name="studyResult" value="1">
+                            <span>1. 完全不会</span>
+                        </label>
 
-                    <label>
-                        <input type="radio" name="studyResult" value="2">
-                        <span>2. 有一点印象</span>
-                    </label>
+                        <label>
+                            <input type="radio" name="studyResult" value="2">
+                            <span>2. 有一点印象</span>
+                        </label>
 
-                    <label>
-                        <input type="radio" name="studyResult" value="3" checked>
-                        <span>3. 基本掌握</span>
-                    </label>
+                        <label>
+                            <input type="radio" name="studyResult" value="3" checked>
+                            <span>3. 基本掌握</span>
+                        </label>
 
-                    <label>
-                        <input type="radio" name="studyResult" value="4">
-                        <span>4. 比较熟练</span>
-                    </label>
+                        <label>
+                            <input type="radio" name="studyResult" value="4">
+                            <span>4. 比较熟练</span>
+                        </label>
 
-                    <label>
-                        <input type="radio" name="studyResult" value="5">
-                        <span>5. 非常熟练</span>
-                    </label>
+                        <label>
+                            <input type="radio" name="studyResult" value="5">
+                            <span>5. 非常熟练</span>
+                        </label>
+                    </div>
+
+                    <button class="primary big" onclick="studyTime()">
+                        完成学习
+                    </button>
                 </div>
-
-                <button class="primary big" onclick="studyTime()">完成学习</button>
             </div>
         </div>
 
@@ -199,7 +203,6 @@
             <div class="page-title">
                 <h1>今日复习</h1>
             </div>
-
             <div id="reviewList"></div>
         </div>
 
@@ -238,7 +241,6 @@
             <div class="page-title">
                 <h1>薄弱知识点</h1>
             </div>
-
             <div id="weakList"></div>
         </div>
 
@@ -282,7 +284,6 @@
             <div class="page-title">
                 <h1>删除知识点</h1>
             </div>
-
             <div id="deleteList"></div>
         </div>
 
@@ -303,7 +304,7 @@
         <input id="addKnowledge" type="text" placeholder="例如：二次函数">
 
         <label>学习时间（分钟）</label>
-        <input id="addTime" type="number" min="1" value="30">
+        <input id="addTime" type="number" min="1" max="600" value="30">
 
         <button class="primary big" onclick="addNode()">添加</button>
     </div>

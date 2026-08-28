@@ -428,6 +428,7 @@ button {
     display: none;
     align-items: center;
     justify-content: center;
+    z-index: 100;
 }
 
 .modal.show {
@@ -467,8 +468,8 @@ button {
     padding: 13px 25px;
     border-radius: 8px;
     display: none;
+    z-index: 200;
 }
-
 
 /* =========================
    学习倒计时
@@ -544,23 +545,17 @@ button {
     background: #eef3ff;
 }
 
-@media(max-width:600px) {
-    #studyTimer {
-        font-size: 42px;
-    }
+/* 评价区域默认隐藏，开始倒计时后显示 */
+.study-evaluation {
+    display: none;
+    margin-top: 20px;
+}
 
-    .timer-buttons {
-        gap: 8px;
-    }
-
-    .timer-btn {
-        flex: 1;
-        min-width: 90px;
-    }
+.study-evaluation.show {
+    display: block;
 }
 
 @media(max-width:900px) {
-
     .sidebar {
         width: 190px;
     }
@@ -581,7 +576,6 @@ button {
 }
 
 @media(max-width:600px) {
-
     .sidebar {
         position: static;
         width: 100%;
@@ -605,5 +599,18 @@ button {
 
     .cards {
         grid-template-columns: 1fr 1fr;
+    }
+
+    #studyTimer {
+        font-size: 42px;
+    }
+
+    .timer-buttons {
+        gap: 8px;
+    }
+
+    .timer-btn {
+        flex: 1;
+        min-width: 90px;
     }
 }
