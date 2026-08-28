@@ -126,10 +126,41 @@
 
             <div class="form-box">
                 <label>选择知识点</label>
-                <select id="studyId"></select>
+                <select id="studyId" onchange="changeStudyNode()"></select>
+
+                <div class="timer-box">
+                    <div class="timer-title">本次学习倒计时</div>
+
+                    <div id="studyTimer">30:00</div>
+
+                    <div class="timer-status" id="timerStatus">
+                        准备开始学习
+                    </div>
+
+                    <div class="timer-buttons">
+                        <button class="timer-btn" onclick="startTimer()">▶ 开始</button>
+                        <button class="timer-btn" onclick="pauseTimer()">⏸ 暂停</button>
+                        <button class="timer-btn" onclick="resetTimer()">↺ 重置</button>
+                    </div>
+                </div>
 
                 <label>本次学习时间（分钟）</label>
-                <input id="studyTime" type="number" min="1" value="30">
+                <input
+                    id="studyTime"
+                    type="number"
+                    min="1"
+                    max="600"
+                    value="30"
+                    onchange="changeStudyTime()"
+                >
+
+                <button
+                    type="button"
+                    class="secondary big"
+                    onclick="showAdd()"
+                >
+                    ＋ 直接添加知识点
+                </button>
 
                 <label>这次学习完成得怎么样？</label>
 

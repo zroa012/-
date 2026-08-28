@@ -1,6 +1,290 @@
 let data = JSON.parse(localStorage.getItem("studyData") || "[]");
 let records = JSON.parse(localStorage.getItem("studyRecords") || "[]");
 
+
+/* =========================
+   学习倒计时状态
+   ========================= */
+
+let timerInterval = null;
+let timerRunning = false;
+let timerSeconds = 30 * 60;
+let timerInitialSeconds = 30 * 60;
+let timerEndTime = null;
+let timerFinished = false;
+
+
+/* 显示倒计时时间 */
+
+function updateTimerDisplay()
+{
+    let total = Math.max(0, Math.floor(timerSeconds));
+
+    let minutes = Math.floor(total / 60);
+    let seconds = total % 60;
+
+    document.getElementById("studyTimer").innerText =
+        String(minutes).padStart(2,"0") +
+        ":" +
+        String(seconds).padStart(2,"0");
+}
+
+
+/* 更新倒计时状态文字 */
+
+function updateTimerStatus(text)
+{
+    let box = document.getElementById("timerStatus");
+
+    if(box)
+        box.innerText = text;
+}
+
+
+/* 根据当前时间计算剩余秒数 */
+
+function syncTimer()
+{
+    if(!timerRunning || !timerEndTime)
+        return;
+
+    timerSeconds =
+        Math.max(
+            0,
+            Math.ceil(
+                (timerEndTime - Date.now()) / 1000
+            )
+        );
+
+    updateTimerDisplay();
+
+    if(timerSeconds <= 0)
+    {
+        finishTimer();
+    }
+}
+
+
+/* 开始倒计时 */
+
+function startTimer()
+{
+    if(data.length == 0)
+    {
+        showMessage("请先添加知识点");
+        return;
+    }
+
+    if(timerRunning)
+        return;
+
+    if(timerSeconds <= 0)
+    {
+        resetTimer();
+    }
+
+    timerFinished = false;
+    timerRunning = true;
+
+    timerEndTime =
+        Date.now() + timerSeconds * 1000;
+
+    updateTimerStatus("正在专注学习 · 加油！");
+
+    clearInterval(timerInterval);
+
+    timerInterval = setInterval(function()
+    {
+        syncTimer();
+    }, 250);
+
+    syncTimer();
+}
+
+
+/* 暂停倒计时 */
+
+function pauseTimer()
+{
+    if(!timerRunning)
+        return;
+
+    syncTimer();
+
+    timerRunning = false;
+
+    clearInterval(timerInterval);
+
+    timerInterval = null;
+    timerEndTime = null;
+
+    updateTimerStatus("已暂停，可以继续学习");
+}
+
+
+/* 倒计时结束 */
+
+function finishTimer()
+{
+    timerSeconds = 0;
+    timerRunning = false;
+
+    clearInterval(timerInterval);
+
+    timerInterval = null;
+    timerEndTime = null;
+
+    timerFinished = true;
+
+    updateTimerDisplay();
+    updateTimerStatus("学习时间到了！请完成本次学习评价");
+
+    showMessage("学习时间到了！🎉");
+
+    // 浏览器允许时尝试播放提示音。
+    // 如果浏览器禁止播放，不影响其他功能。
+    try
+    {
+        let audioContext =
+            new (window.AudioContext || window.webkitAudioContext)();
+
+        let oscillator =
+            audioContext.createOscillator();
+
+        let gain =
+            audioContext.createGain();
+
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+
+        oscillator.frequency.value = 880;
+        gain.gain.value = 0.08;
+
+        oscillator.start();
+
+        setTimeout(function()
+        {
+            oscillator.stop();
+            audioContext.close();
+        }, 500);
+    }
+    catch(e)
+    {
+        console.log("提示音不可用");
+    }
+}
+
+
+/* 重置倒计时 */
+
+function resetTimer()
+{
+    pauseTimer();
+
+    let input =
+        document.getElementById("studyTime");
+
+    let time = parseInt(input.value);
+
+    if(!time || time < 1)
+        time = 1;
+
+    if(time > 600)
+        time = 600;
+
+    input.value = time;
+
+    timerInitialSeconds = time * 60;
+    timerSeconds = timerInitialSeconds;
+
+    timerFinished = false;
+
+    updateTimerDisplay();
+    updateTimerStatus("准备开始学习");
+}
+
+
+/* 修改学习时间 */
+
+function changeStudyTime()
+{
+    if(timerRunning)
+    {
+        showMessage("请先暂停倒计时，再修改学习时间");
+        return;
+    }
+
+    resetTimer();
+}
+
+
+/* 切换知识点 */
+
+function changeStudyNode()
+{
+    if(timerRunning)
+    {
+        pauseTimer();
+    }
+
+    let id =
+        parseInt(
+            document.getElementById("studyId").value
+        );
+
+    let k =
+        data.find(function(x)
+        {
+            return x.id == id;
+        });
+
+    if(!k)
+        return;
+
+    document.getElementById("studyTime").value =
+        k.time || 30;
+
+    resetTimer();
+}
+
+
+/* 获取本次实际学习分钟数 */
+
+function getActualStudyMinutes()
+{
+    let studiedSeconds =
+        Math.max(
+            0,
+            timerInitialSeconds - timerSeconds
+        );
+
+    // 如果倒计时完整结束，按计划时间记录
+    if(timerFinished)
+    {
+        studiedSeconds = timerInitialSeconds;
+    }
+
+    // 如果没有启动计时器，兼容原来的手动记录方式
+    if(studiedSeconds <= 0)
+    {
+        let input =
+            parseInt(
+                document.getElementById("studyTime").value
+            );
+
+        if(!input || input < 1)
+            input = 1;
+
+        return input;
+    }
+
+    return Math.max(
+        1,
+        Math.ceil(studiedSeconds / 60)
+    );
+}
+
+
 function getToday()
 {
     let date = new Date();
@@ -183,36 +467,50 @@ function closeAdd()
 
 function addNode()
 {
-    let subject=document.getElementById("addSubject").value.trim();
-    let knowledge=document.getElementById("addKnowledge").value.trim();
-    let time=parseInt(document.getElementById("addTime").value);
+    let subject =
+        document.getElementById("addSubject").value.trim();
 
-    if(subject=="")
+    let knowledge =
+        document.getElementById("addKnowledge").value.trim();
+
+    let time =
+        parseInt(
+            document.getElementById("addTime").value
+        );
+
+    if(subject == "")
     {
         showMessage("请输入科目");
         return;
     }
 
-    if(knowledge=="")
+    if(knowledge == "")
     {
         showMessage("请输入知识点");
         return;
     }
 
-    if(!time || time<1)
-        time=1;
+    if(!time || time < 1)
+        time = 1;
 
-    let id=1;
+    if(time > 600)
+        time = 600;
 
-    if(data.length>0)
+    let id = 1;
+
+    if(data.length > 0)
     {
-        id=Math.max(...data.map(function(k)
-        {
-            return k.id;
-        }))+1;
+        id =
+            Math.max(
+                ...data.map(function(k)
+                {
+                    return k.id;
+                })
+            ) + 1;
     }
 
-    let k={
+    let k =
+    {
         id:id,
         subject:subject,
         knowledge_point:knowledge,
@@ -220,7 +518,8 @@ function addNode()
         time:time,
         level:0,
         Next_review_time:1,
-        Next_review_Date:compute_NextDate(getToday(),1),
+        Next_review_Date:
+            compute_NextDate(getToday(),1),
         talent:10
     };
 
@@ -228,44 +527,81 @@ function addNode()
 
     saveData();
 
-    document.getElementById("addSubject").value="";
-    document.getElementById("addKnowledge").value="";
+    document.getElementById("addSubject").value = "";
+    document.getElementById("addKnowledge").value = "";
+    document.getElementById("addTime").value = "30";
 
     closeAdd();
 
     refresh();
 
-    showMessage("知识点添加成功！");
+    // 自动选择刚刚添加的知识点
+    let studySelect =
+        document.getElementById("studyId");
+
+    if(studySelect)
+    {
+        studySelect.value = String(id);
+
+        document.getElementById("studyTime").value =
+            time;
+
+        resetTimer();
+    }
+
+    showMessage(
+        "知识点添加成功，可以开始学习了！"
+    );
 }
 
 function studyTime()
 {
-    if(data.length==0)
+    if(data.length == 0)
     {
         showMessage("现在还没有知识点");
         return;
     }
 
-    let id=parseInt(document.getElementById("studyId").value);
-    let time=parseInt(document.getElementById("studyTime").value);
-    let result=parseInt(
+    let id =
+        parseInt(
+            document.getElementById("studyId").value
+        );
+
+    let resultInput =
         document.querySelector(
             'input[name="studyResult"]:checked'
-        ).value
-    );
+        );
 
-    if(time<1)
-        time=1;
-
-    let k=data.find(function(x)
+    if(!resultInput)
     {
-        return x.id==id;
-    });
+        showMessage("请选择本次学习完成情况");
+        return;
+    }
+
+    let result = parseInt(resultInput.value);
+
+    let k =
+        data.find(function(x)
+        {
+            return x.id == id;
+        });
 
     if(!k)
+    {
+        showMessage("没有找到这个知识点");
         return;
+    }
 
-    let proficiency=compute_Proficiency(result);
+    // 如果计时器正在运行，先暂停，避免提交后继续计时
+    if(timerRunning)
+    {
+        pauseTimer();
+    }
+
+    let time = getActualStudyMinutes();
+
+    let proficiency =
+        compute_Proficiency(result);
 
     compute_talent(k,result);
 
@@ -280,12 +616,25 @@ function studyTime()
 
     saveData();
 
-    showMessage("本次学习已经记录！");
+    // 清空本次计时状态
+    timerFinished = false;
+    timerInitialSeconds =
+        Math.max(1, (k.time || 30)) * 60;
+    timerSeconds = timerInitialSeconds;
+
+    updateTimerDisplay();
+    updateTimerStatus("本次学习已记录，可以开始下一次学习");
+
+    showMessage(
+        "本次学习已经记录！实际学习 " +
+        time +
+        " 分钟"
+    );
 
     setTimeout(function()
     {
         showPage("knowledge");
-    },500);
+    },800);
 }
 
 function reviewNode(id)
@@ -618,25 +967,80 @@ function showPlan()
 
 function showStudy()
 {
-    let select=document.getElementById("studyId");
+    let select =
+        document.getElementById("studyId");
 
-    if(data.length==0)
+    if(data.length == 0)
     {
-        select.innerHTML=
+        select.innerHTML =
             '<option>暂无知识点</option>';
+
+        pauseTimer();
+
+        timerSeconds = 0;
+        timerInitialSeconds = 0;
+        timerFinished = false;
+
+        updateTimerDisplay();
+        updateTimerStatus("请先添加知识点");
+
         return;
     }
 
-    select.innerHTML=data.map(
-        function(k)
+    let oldId = select.value;
+
+    select.innerHTML =
+        data.map(function(k)
         {
             return `
-            <option value="${k.id}">
-                ${k.subject} - ${k.knowledge_point}
-            </option>
+                <option value="${k.id}">
+                    ${k.subject} - ${k.knowledge_point}
+                </option>
             `;
+        }).join("");
+
+    // 保留之前选择的知识点
+    if(
+        oldId &&
+        data.some(function(k)
+        {
+            return k.id == parseInt(oldId);
+        })
+    )
+    {
+        select.value = oldId;
+    }
+    else
+    {
+        select.value = String(data[0].id);
+    }
+
+    let current =
+        data.find(function(k)
+        {
+            return k.id == parseInt(select.value);
+        });
+
+    if(current)
+    {
+        document.getElementById("studyTime").value =
+            current.time || 30;
+
+        // 只有没有正在计时的时候才初始化计时器
+        if(!timerRunning)
+        {
+            timerInitialSeconds =
+                (current.time || 30) * 60;
+
+            timerSeconds =
+                timerInitialSeconds;
+
+            timerFinished = false;
+
+            updateTimerDisplay();
+            updateTimerStatus("准备开始学习");
         }
-    ).join("");
+    }
 }
 
 function showReview()

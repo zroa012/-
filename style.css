@@ -469,6 +469,96 @@ button {
     display: none;
 }
 
+
+/* =========================
+   学习倒计时
+   ========================= */
+
+.timer-box {
+    margin-top: 24px;
+    padding: 28px 20px;
+    background: #f5f7ff;
+    border: 1px solid #e4e9ff;
+    border-radius: 16px;
+    text-align: center;
+}
+
+.timer-title {
+    color: #7b8494;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+#studyTimer {
+    color: #4f7cff;
+    font-size: 52px;
+    line-height: 1.1;
+    font-weight: bold;
+    letter-spacing: 3px;
+    margin: 10px 0 8px;
+    font-variant-numeric: tabular-nums;
+}
+
+.timer-status {
+    color: #8c95a3;
+    font-size: 13px;
+    min-height: 20px;
+    margin-bottom: 18px;
+}
+
+.timer-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.timer-btn {
+    border: 0;
+    background: white;
+    color: #4f7cff;
+    padding: 9px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(30,50,80,.08);
+}
+
+.timer-btn:hover {
+    background: #eef3ff;
+}
+
+.timer-btn:active {
+    transform: translateY(1px);
+}
+
+.secondary {
+    width: 100%;
+    border: 1px solid #dfe3e9;
+    background: #f8f9fb;
+    color: #4f7cff;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+}
+
+.secondary:hover {
+    background: #eef3ff;
+}
+
+@media(max-width:600px) {
+    #studyTimer {
+        font-size: 42px;
+    }
+
+    .timer-buttons {
+        gap: 8px;
+    }
+
+    .timer-btn {
+        flex: 1;
+        min-width: 90px;
+    }
+}
+
 @media(max-width:900px) {
 
     .sidebar {
