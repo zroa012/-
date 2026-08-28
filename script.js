@@ -1443,5 +1443,45 @@ function showDelete()
 }
 
 
+/*
+ * =========================
+ * 离开网页 / 切换标签页时重置倒计时
+ * =========================
+ *
+ * visibilitychange：
+ * 当用户切换到其他标签页、最小化浏览器或页面变成不可见时触发。
+ *
+ * pagehide：
+ * 当用户离开当前网页、跳转到其他网页时触发。
+ *
+ * 这两个事件一起使用，可以覆盖：
+ * 1. 点击网站里的其他页面
+ * 2. 打开/切换到其他浏览器标签页
+ * 3. 当前网页跳转到其他网页
+ * 4. 浏览器最小化或页面进入后台
+ *
+ * 注意：这里只重置倒计时，不删除学习数据。
+ */
+document.addEventListener("visibilitychange", function()
+{
+    if(document.visibilityState === "hidden")
+    {
+        resetStudyPage();
+    }
+});
+
+
+window.addEventListener("pagehide", function()
+{
+    resetStudyPage();
+});
+
+
+window.addEventListener("beforeunload", function()
+{
+    resetStudyPage();
+});
+
+
 /* 页面第一次打开 */
 refresh();
