@@ -161,8 +161,11 @@ function startTimer() {
 
     if (timerRunning) return;
 
-    timerPageActive = true;
-    timerRunning = true;
+   // 开始学习后强制收起侧边栏
+   lockSidebarForStudy();
+   
+   timerPageActive = true;
+   timerRunning = true;
     setEvaluation(false);
     renderTimer();
 
@@ -553,30 +556,94 @@ function initFirstUseIntro() {
 
     const wrap = document.createElement("div");
     wrap.id = "firstUseIntro";
-    wrap.innerHTML = `
-        <div class="first-use-card">
-            <div class="first-use-icon">🧠</div>
-            <h1>智能学习助手</h1>
-            <p class="first-use-subtitle">让学习、记录与复习形成一个完整的学习闭环</p>
-            <div class="first-use-features">
-                <div class="first-use-feature"><div class="feature-icon">⏱️</div><div><strong>学习计时</strong><span>设定学习时间，专注完成学习任务</span></div></div>
-                <div class="first-use-feature"><div class="feature-icon">📚</div><div><strong>知识点管理</strong><span>添加和管理自己的知识点</span></div></div>
-                <div class="first-use-feature"><div class="feature-icon">⭐</div><div><strong>学习评价</strong><span>学习结束后评价自己的掌握程度</span></div></div>
-                <div class="first-use-feature"><div class="feature-icon">🔄</div><div><strong>智能复习</strong><span>根据学习情况安排后续复习</span></div></div>
-            </div>
-            <div class="first-use-flow">
-                <div class="flow-title">使用流程</div>
-                <div class="flow-list"><span>选择知识点</span><b>→</b><span>开始学习</span><b>→</b><span>完成学习</span><b>→</b><span>评价掌握程度</span><b>→</b><span>复习</span></div>
-            </div>
-            <p class="first-use-note">本网站是一款学习辅助工具，会根据你的学习记录和掌握程度帮助安排后续学习与复习。</p>
-            <button id="startUsingButton" type="button">开始使用</button>
-        </div>
-    `;
+    // =========================
+// 侧边栏收起 / 展开
+// 刷新后记住状态
+// =========================
 
-    document.body.appendChild(wrap);
+function applySidebarState() {
+    const sidebar = document.querySelector(".sidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
 
-    document.getElementById("startUsingButton").onclick = () => {
-        localStorage.setItem("hasSeenIntro","true");
+    if (!sidebar || !sidebarToggle) return;
+
+    const collapsed =
+        localStorage.getItem("sidebarCollapsed") === "true";
+
+    if (collapsed) {
+        sidebar.classList.add("collapsed");
+        sidebarToggle.title = "展开侧边栏";
+    } else {
+        sidebar.classList.remove("collapsed");
+        sidebarToggle.title = "收起侧边栏";
+    }
+}
+
+
+// =========================
+// 强制收起侧边栏
+// =========================
+
+function lockSidebarForStudy() {
+    document.body.classList.add("study-lock-sidebar");
+}
+
+
+// =========================
+// 解除强制收起
+// 恢复用户之前保存的状态
+// =========================
+
+function unlockSidebarAfterStudy() {
+    document.body.classList.remove("study-lock-sidebar");
+    applySidebarState();
+}
+
+
+// =========================
+// 侧边栏按钮
+// =========================
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const sidebar = document.querySelector(".sidebar");
+    const sidebarToggle =
+        document.getElementById("sidebarToggle");
+
+    if (!sidebar || !sidebarToggle) return;
+
+    // 刷新网页时读取上一次状态
+    applySidebarState();
+
+    sidebarToggle.addEventListener("click", function () {
+
+        // 学习过程中禁止展开
+        if (
+            document.body.classList.contains(
+                "study-lock-sidebar"
+            )
+        ) {
+            return;
+        }
+
+        sidebar.classList.toggle("collapsed");
+
+        const collapsed =
+            sidebar.classList.contains("collapsed");
+
+        // 保存状态
+        localStorage.setItem(
+            "sidebarCollapsed",
+            collapsed ? "true" : "false"
+        );
+
+        sidebarToggle.title =
+            collapsed
+                ? "展开侧边栏"
+                : "收起侧边栏";
+    });
+
+});
         wrap.classList.add("hide");
         setTimeout(() => wrap.remove(), 300);
     };
