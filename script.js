@@ -599,3 +599,28 @@ document.addEventListener("DOMContentLoaded", () => {
     resetTimer(true);
     initFirstUseIntro();
 });
+// =========================
+// 侧边栏收起 / 展开
+// =========================
+
+const sidebar = document.querySelector(".sidebar");
+const sidebarToggle = document.getElementById("sidebarToggle");
+
+if (sidebar && sidebarToggle) {
+
+    sidebarToggle.addEventListener("click", function () {
+
+        sidebar.classList.toggle("collapsed");
+
+        // 根据当前状态改变按钮
+        if (sidebar.classList.contains("collapsed")) {
+            sidebarToggle.textContent = "☰";
+            sidebarToggle.title = "展开侧边栏";
+        } else {
+            sidebarToggle.textContent = "☰";
+            sidebarToggle.title = "收起侧边栏";
+        }
+
+    });
+
+}
