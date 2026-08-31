@@ -133,7 +133,6 @@ function setEvaluation(show) {
 }
 
 function resetTimer(silent = false) {
-    unlockSidebarAfterStudy();
     clearInterval(timerInterval);
     timerInterval = null;
     timerRunning = false;
@@ -200,8 +199,12 @@ function pauseTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
     timerRunning = false;
+
+    // 暂停后恢复侧边栏，允许用户打开侧边栏
+    unlockSidebarAfterStudy();
+
     renderTimer();
-    showMessage("倒计时已暂停");
+    showMessage("倒计时已暂停，可以打开侧边栏");
 }
 
 function changeStudyTime() {
@@ -526,10 +529,7 @@ function escapeHtml(value) {
     }[c]));
 }
 
-/* =========================
-   首次使用介绍页
-   ========================= */
-
+/* 首次使用介绍页 */
 function initFirstUseIntro() {
     if (localStorage.getItem("hasSeenIntro") === "true") return;
     if (document.getElementById("firstUseIntro")) return;
@@ -537,195 +537,33 @@ function initFirstUseIntro() {
     const style = document.createElement("style");
     style.id = "firstUseIntroStyle";
     style.textContent = `
-        #firstUseIntro{
-            position:fixed;
-            inset:0;
-            z-index:99999;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            padding:20px;
-            background:linear-gradient(135deg,#eef4ff,#f8fbff,#eef8f4);
-            transition:opacity .3s
-        }
-        #firstUseIntro.hide{
-            opacity:0;
-            pointer-events:none
-        }
-        .first-use-card{
-            width:min(760px,100%);
-            max-height:90vh;
-            overflow:auto;
-            background:#fff;
-            border-radius:26px;
-            padding:40px;
-            box-shadow:0 25px 70px rgba(0,0,0,.13);
-            text-align:center
-        }
-        .first-use-icon{
-            font-size:42px;
-            margin-bottom:10px
-        }
-        .first-use-card h1{
-            margin:0;
-            color:#202938;
-            font-size:32px
-        }
-        .first-use-subtitle{
-            color:#7b8494;
-            line-height:1.7
-        }
-        .first-use-features{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:12px;
-            text-align:left;
-            margin:25px 0
-        }
-        .first-use-feature{
-            display:flex;
-            gap:12px;
-            padding:14px;
-            border-radius:14px;
-            background:#f7f9fc
-        }
-        .feature-icon{
-            font-size:22px
-        }
-        .first-use-feature strong{
-            display:block;
-            margin-bottom:3px
-        }
-        .first-use-feature span{
-            font-size:12px;
-            color:#7b8494
-        }
-        .first-use-flow{
-            padding:16px;
-            background:#f7f9fc;
-            border-radius:14px
-        }
-        .flow-title{
-            font-weight:bold;
-            margin-bottom:10px
-        }
-        .flow-list{
-            display:flex;
-            justify-content:center;
-            gap:7px;
-            flex-wrap:wrap;
-            font-size:12px
-        }
-        .flow-list span{
-            padding:7px;
-            background:#fff;
-            border-radius:7px
-        }
-        .first-use-note{
-            font-size:12px;
-            color:#9ba3b1;
-            line-height:1.7
-        }
-        #startUsingButton{
-            width:220px;
-            height:48px;
-            border:0;
-            border-radius:12px;
-            background:#4f7cff;
-            color:#fff;
-            font-size:16px;
-            font-weight:bold
-        }
-        @media(max-width:650px){
-            .first-use-card{padding:28px 20px}
-            .first-use-features{grid-template-columns:1fr}
-        }
+        #firstUseIntro{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#eef4ff,#f8fbff,#eef8f4);transition:opacity .3s}
+        #firstUseIntro.hide{opacity:0;pointer-events:none}
+        .first-use-card{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:26px;padding:40px;box-shadow:0 25px 70px rgba(0,0,0,.13);text-align:center}
+        .first-use-icon{font-size:42px;margin-bottom:10px}
+        .first-use-card h1{margin:0;color:#202938;font-size:32px}
+        .first-use-subtitle{color:#7b8494;line-height:1.7}
+        .first-use-features{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left;margin:25px 0}
+        .first-use-feature{display:flex;gap:12px;padding:14px;border-radius:14px;background:#f7f9fc}
+        .feature-icon{font-size:22px}
+        .first-use-feature strong{display:block;margin-bottom:3px}
+        .first-use-feature span{font-size:12px;color:#7b8494}
+        .first-use-flow{padding:16px;background:#f7f9fc;border-radius:14px}
+        .flow-title{font-weight:bold;margin-bottom:10px}
+        .flow-list{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;font-size:12px}
+        .flow-list span{padding:7px;background:#fff;border-radius:7px}
+        .first-use-note{font-size:12px;color:#9ba3b1;line-height:1.7}
+        #startUsingButton{width:220px;height:48px;border:0;border-radius:12px;background:#4f7cff;color:#fff;font-size:16px;font-weight:bold}
+        @media(max-width:650px){.first-use-card{padding:28px 20px}.first-use-features{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
 
     const wrap = document.createElement("div");
     wrap.id = "firstUseIntro";
-
-    wrap.innerHTML = `
-        <div class="first-use-card">
-            <div class="first-use-icon">📚</div>
-            <h1>欢迎使用智能学习助手</h1>
-            <p class="first-use-subtitle">
-                用更清晰的方式记录知识点、安排复习计划，
-                帮助你形成自己的学习节奏。
-            </p>
-
-            <div class="first-use-features">
-                <div class="first-use-feature">
-                    <div class="feature-icon">📖</div>
-                    <div>
-                        <strong>知识点管理</strong>
-                        <span>记录并管理已经学习的知识点。</span>
-                    </div>
-                </div>
-
-                <div class="first-use-feature">
-                    <div class="feature-icon">⏱️</div>
-                    <div>
-                        <strong>专注学习</strong>
-                        <span>使用学习倒计时进行一次完整学习。</span>
-                    </div>
-                </div>
-
-                <div class="first-use-feature">
-                    <div class="feature-icon">🔄</div>
-                    <div>
-                        <strong>智能复习</strong>
-                        <span>根据学习结果安排后续复习。</span>
-                    </div>
-                </div>
-
-                <div class="first-use-feature">
-                    <div class="feature-icon">📊</div>
-                    <div>
-                        <strong>学习统计</strong>
-                        <span>查看学习时间、次数和知识点掌握情况。</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="first-use-flow">
-                <div class="flow-title">推荐使用流程</div>
-                <div class="flow-list">
-                    <span>① 添加知识点</span>
-                    <span>→</span>
-                    <span>② 开始学习</span>
-                    <span>→</span>
-                    <span>③ 完成评价</span>
-                    <span>→</span>
-                    <span>④ 按计划复习</span>
-                </div>
-            </div>
-
-            <p class="first-use-note">
-                首次使用后，本介绍页不会再次自动显示。
-            </p>
-
-            <button id="startUsingButton">开始使用</button>
-        </div>
-    `;
-
-    document.body.appendChild(wrap);
-
-    const btn = document.getElementById("startUsingButton");
-    if (btn) {
-        btn.onclick = () => {
-            localStorage.setItem("hasSeenIntro", "true");
-            wrap.classList.add("hide");
-            setTimeout(() => wrap.remove(), 300);
-        };
-    }
-}
-
-
-/* =========================
-   侧边栏：状态记忆 + 学习强制收起
-   ========================= */
+    // =========================
+// 侧边栏收起 / 展开
+// 刷新后记住状态
+// =========================
 
 function applySidebarState() {
     const sidebar = document.querySelector(".sidebar");
@@ -736,111 +574,170 @@ function applySidebarState() {
     const collapsed =
         localStorage.getItem("sidebarCollapsed") === "true";
 
-    sidebar.classList.toggle("collapsed", collapsed);
-    sidebarToggle.title = collapsed ? "展开侧边栏" : "收起侧边栏";
+    if (collapsed) {
+        sidebar.classList.add("collapsed");
+        sidebarToggle.title = "展开侧边栏";
+    } else {
+        sidebar.classList.remove("collapsed");
+        sidebarToggle.title = "收起侧边栏";
+    }
 }
+
+
+// =========================
+// 强制收起侧边栏
+// =========================
 
 function lockSidebarForStudy() {
     document.body.classList.add("study-lock-sidebar");
 }
+
+
+// =========================
+// 解除强制收起
+// 恢复用户之前保存的状态
+// =========================
 
 function unlockSidebarAfterStudy() {
     document.body.classList.remove("study-lock-sidebar");
     applySidebarState();
 }
 
-function initSidebar() {
+
+// =========================
+// 侧边栏按钮
+// =========================
+
+document.addEventListener("DOMContentLoaded", function () {
+
     const sidebar = document.querySelector(".sidebar");
-    const sidebarToggle = document.getElementById("sidebarToggle");
+    const sidebarToggle =
+        document.getElementById("sidebarToggle");
 
     if (!sidebar || !sidebarToggle) return;
 
+    // 刷新网页时读取上一次状态
     applySidebarState();
 
-    // 防止同一个按钮被重复绑定
-    if (sidebarToggle.dataset.sidebarInitialized === "true") return;
-    sidebarToggle.dataset.sidebarInitialized = "true";
-
     sidebarToggle.addEventListener("click", function () {
-        if (document.body.classList.contains("study-lock-sidebar")) {
+
+        // 学习过程中禁止展开
+        if (
+            document.body.classList.contains(
+                "study-lock-sidebar"
+            )
+        ) {
             return;
         }
 
         sidebar.classList.toggle("collapsed");
 
-        const collapsed = sidebar.classList.contains("collapsed");
+        const collapsed =
+            sidebar.classList.contains("collapsed");
+
+        // 保存状态
         localStorage.setItem(
             "sidebarCollapsed",
             collapsed ? "true" : "false"
         );
 
-        sidebarToggle.title = collapsed ? "展开侧边栏" : "收起侧边栏";
-    });
-}
-
-
-/* =========================
-   防止页面中出现多个倒计时
-   ========================= */
-
-function cleanupDuplicateTimers() {
-    const timers = Array.from(document.querySelectorAll("#studyTimer"));
-
-    // 正常情况下这里应该只有一个。
-    // 如果旧 HTML/CSS/脚本残留导致出现多个，只保留第一个。
-    if (timers.length <= 1) return;
-
-    const keep = timers[0];
-
-    timers.slice(1).forEach(timer => {
-        const box = timer.closest(".timer-box");
-        if (box) {
-            box.remove();
-        } else {
-            timer.remove();
-        }
+        sidebarToggle.title =
+            collapsed
+                ? "展开侧边栏"
+                : "收起侧边栏";
     });
 
-    // 确保保留的倒计时仍在开始学习页面中
-    if (!document.getElementById("studyTimer")) {
-        keep.id = "studyTimer";
-    }
+});
+        wrap.classList.add("hide");
+        setTimeout(() => wrap.remove(), 300);
+    };
 }
 
-
-/* =========================
-   页面可见性
-   切换标签页时重置正在进行的倒计时
-   ========================= */
+let leftBrowserPage = false;
+let leftWhileRunning = false;
+let leftWhilePaused = false;
 
 document.addEventListener("visibilitychange", () => {
-    if (
-        document.hidden &&
-        document.getElementById("study")?.classList.contains("active") &&
-        (timerRunning || timerSeconds > 0)
-    ) {
-        timerPageActive = false;
-        resetTimer(true);
-    }
-});
+    const studyPage = document.getElementById("study");
+    const isStudyPage = !!studyPage?.classList.contains("active");
 
+    if (document.hidden) {
+        if (!isStudyPage) return;
+
+        leftBrowserPage = true;
+
+        if (timerRunning) {
+            // 正在倒计时：离开标签页后重置
+            leftWhileRunning = true;
+            leftWhilePaused = false;
+            timerPageActive = false;
+            resetTimer(true);
+        } else if (!timerFinished) {
+            // 暂停状态：不重置，保留剩余时间
+            leftWhilePaused = true;
+            leftWhileRunning = false;
+        }
+        return;
+    }
+
+    if (!leftBrowserPage) return;
+    leftBrowserPage = false;
+
+    if (!isStudyPage) {
+        showMessage("欢迎回来！");
+        return;
+    }
+
+    if (leftWhileRunning) {
+        leftWhileRunning = false;
+        unlockSidebarAfterStudy();
+        showMessage("欢迎回来！刚才离开了学习页面，倒计时已重置。");
+        return;
+    }
+
+    if (leftWhilePaused) {
+        leftWhilePaused = false;
+        unlockSidebarAfterStudy();
+        renderTimer();
+        showMessage("欢迎回来！学习计时已暂停，请继续学习。");
+        return;
+    }
+
+    showMessage("欢迎回来！");
+});
 
 window.addEventListener("beforeunload", () => {
     clearInterval(timerInterval);
 });
 
-
-/* =========================
-   初始化
-   ========================= */
-
 document.addEventListener("DOMContentLoaded", () => {
-    cleanupDuplicateTimers();
-
     refresh();
     fillStudySelect();
     resetTimer(true);
-
-    initSidebar();
     initFirstUseIntro();
 });
+// =========================
+// 侧边栏收起 / 展开
+// =========================
+
+const sidebar = document.querySelector(".sidebar");
+const sidebarToggle = document.getElementById("sidebarToggle");
+
+if (sidebar && sidebarToggle) {
+
+    sidebarToggle.addEventListener("click", function () {
+
+        sidebar.classList.toggle("collapsed");
+
+        // 根据当前状态改变按钮
+        if (sidebar.classList.contains("collapsed")) {
+            sidebarToggle.textContent = "☰";
+            sidebarToggle.title = "展开侧边栏";
+        } else {
+            sidebarToggle.textContent = "☰";
+            sidebarToggle.title = "收起侧边栏";
+        }
+
+    });
+
+}
