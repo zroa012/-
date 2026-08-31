@@ -7,18 +7,13 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="app">
-
     <aside class="sidebar">
+        <button id="sidebarToggle" class="sidebar-toggle" title="收起侧边栏">☰</button>
         <div class="logo">
             <div class="logo-icon">📚</div>
-            <div>
-                <h2>智能学习助手</h2>
-                <p>Smart Study</p>
-            </div>
+            <div><h2>智能学习助手</h2><p>Smart Study</p></div>
         </div>
-
         <div class="menu">
             <button onclick="showPage('home')">🏠 首页</button>
             <button onclick="showPage('knowledge')">📖 已学知识点</button>
@@ -29,7 +24,6 @@
             <button onclick="showPage('weak')">⚠️ 薄弱知识点</button>
             <button onclick="showPage('count')">📈 学习统计</button>
         </div>
-
         <div class="sidebar-bottom">
             <button class="add-button" onclick="showAdd()">＋ 添加知识点</button>
             <button class="delete-button" onclick="showPage('delete')">🗑 删除知识点</button>
@@ -37,105 +31,42 @@
     </aside>
 
     <main class="main">
-
         <div id="home" class="page active">
-            <div class="top">
-                <div>
-                    <p class="hello">你好啊！</p>
-                    <h1>今天也要好好学习</h1>
-                    <p class="date" id="homeDate"></p>
-                </div>
-            </div>
-
+            <div class="top"><div><p class="hello">你好啊！</p><h1>今天也要好好学习</h1><p class="date" id="homeDate"></p></div></div>
             <div class="cards">
-                <div class="card blue">
-                    <p>知识点</p>
-                    <strong id="homeKnowledge">0</strong>
-                    <span>个</span>
-                </div>
-
-                <div class="card green">
-                    <p>今日复习</p>
-                    <strong id="homeReview">0</strong>
-                    <span>个</span>
-                </div>
-
-                <div class="card orange">
-                    <p>累计学习</p>
-                    <strong id="homeTime">0</strong>
-                    <span>分钟</span>
-                </div>
-
-                <div class="card purple">
-                    <p>平均熟练度</p>
-                    <strong id="homeProficiency">0</strong>
-                    <span>%</span>
-                </div>
+                <div class="card blue"><p>知识点</p><strong id="homeKnowledge">0</strong><span>个</span></div>
+                <div class="card green"><p>今日复习</p><strong id="homeReview">0</strong><span>个</span></div>
+                <div class="card orange"><p>累计学习</p><strong id="homeTime">0</strong><span>分钟</span></div>
+                <div class="card purple"><p>平均熟练度</p><strong id="homeProficiency">0</strong><span>%</span></div>
             </div>
-
             <div class="home-grid">
-                <div class="panel">
-                    <div class="panel-title">
-                        <h2>今日学习计划</h2>
-                        <button onclick="showPage('plan')">查看全部 →</button>
-                    </div>
-                    <div id="homePlan"></div>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-title">
-                        <h2>薄弱知识点</h2>
-                        <button onclick="showPage('weak')">查看全部 →</button>
-                    </div>
-                    <div id="homeWeak"></div>
-                </div>
+                <div class="panel"><div class="panel-title"><h2>今日学习计划</h2><button onclick="showPage('plan')">查看全部 →</button></div><div id="homePlan"></div></div>
+                <div class="panel"><div class="panel-title"><h2>薄弱知识点</h2><button onclick="showPage('weak')">查看全部 →</button></div><div id="homeWeak"></div></div>
             </div>
         </div>
 
         <div id="knowledge" class="page">
-            <div class="page-title">
-                <h1>已学知识点</h1>
-                <button class="primary" onclick="showAdd()">＋ 添加知识点</button>
-            </div>
+            <div class="page-title"><h1>已学知识点</h1><button class="primary" onclick="showAdd()">＋ 添加知识点</button></div>
             <div id="knowledgeList"></div>
         </div>
 
         <div id="plan" class="page">
-            <div class="page-title">
-                <h1>今日复习计划</h1>
-            </div>
-
-            <div class="today-box">
-                今天是 <strong id="planDate"></strong>
-            </div>
-
+            <div class="page-title"><h1>今日复习计划</h1></div>
+            <div class="today-box">今天是 <strong id="planDate"></strong></div>
             <div id="planList"></div>
-
-            <div class="total-time">
-                今日预计学习时间：
-                <strong id="planTime">0</strong>
-                分钟
-            </div>
+            <div class="total-time">今日预计学习时间：<strong id="planTime">0</strong> 分钟</div>
         </div>
 
         <div id="study" class="page">
-            <div class="page-title">
-                <h1>开始学习</h1>
-            </div>
-
+            <div class="page-title"><h1>开始学习</h1></div>
             <div class="form-box">
                 <label>选择知识点</label>
                 <select id="studyId" onchange="changeStudyNode()"></select>
 
                 <div class="timer-box">
                     <div class="timer-title">本次学习倒计时</div>
-
                     <div id="studyTimer">30:00</div>
-
-                    <div class="timer-status" id="timerStatus">
-                        准备开始学习
-                    </div>
-
+                    <div class="timer-status" id="timerStatus">准备开始学习</div>
                     <div class="timer-buttons">
                         <button class="timer-btn" onclick="startTimer()">▶ 开始</button>
                         <button class="timer-btn" onclick="pauseTimer()">⏸ 暂停</button>
@@ -144,175 +75,63 @@
                 </div>
 
                 <label>本次学习时间（分钟）</label>
-                <input
-                    id="studyTime"
-                    type="number"
-                    min="1"
-                    max="600"
-                    value="30"
-                    onchange="changeStudyTime()"
-                >
+                <input id="studyTime" type="number" min="1" max="600" value="30" onchange="changeStudyTime()">
 
-                <button
-                    type="button"
-                    class="secondary big"
-                    onclick="showAdd()"
-                >
-                    ＋ 直接添加知识点
-                </button>
+                <button type="button" class="secondary big" onclick="showAdd()">＋ 直接添加知识点</button>
 
-                <!-- 开始倒计时后才显示 -->
                 <div id="studyEvaluation" class="study-evaluation">
                     <label>这次学习完成得怎么样？</label>
-
                     <div class="result-list">
-                        <label>
-                            <input type="radio" name="studyResult" value="1">
-                            <span>1. 完全不会</span>
-                        </label>
-
-                        <label>
-                            <input type="radio" name="studyResult" value="2">
-                            <span>2. 有一点印象</span>
-                        </label>
-
-                        <label>
-                            <input type="radio" name="studyResult" value="3" checked>
-                            <span>3. 基本掌握</span>
-                        </label>
-
-                        <label>
-                            <input type="radio" name="studyResult" value="4">
-                            <span>4. 比较熟练</span>
-                        </label>
-
-                        <label>
-                            <input type="radio" name="studyResult" value="5">
-                            <span>5. 非常熟练</span>
-                        </label>
+                        <label><input type="radio" name="studyResult" value="1"><span>1. 完全不会</span></label>
+                        <label><input type="radio" name="studyResult" value="2"><span>2. 有一点印象</span></label>
+                        <label><input type="radio" name="studyResult" value="3" checked><span>3. 基本掌握</span></label>
+                        <label><input type="radio" name="studyResult" value="4"><span>4. 比较熟练</span></label>
+                        <label><input type="radio" name="studyResult" value="5"><span>5. 非常熟练</span></label>
                     </div>
-
-                    <button class="primary big" onclick="studyTime()">
-                        完成学习
-                    </button>
+                    <button class="primary big" onclick="studyTime()">完成学习</button>
                 </div>
             </div>
         </div>
 
-        <div id="review" class="page">
-            <div class="page-title">
-                <h1>今日复习</h1>
-            </div>
-            <div id="reviewList"></div>
-        </div>
+        <div id="review" class="page"><div class="page-title"><h1>今日复习</h1></div><div id="reviewList"></div></div>
 
         <div id="recent" class="page">
-            <div class="page-title">
-                <h1>近期学习情况</h1>
-            </div>
-
-            <div class="panel">
-                <h2>近 7 天学习情况</h2>
-                <div id="recentList"></div>
-            </div>
-
+            <div class="page-title"><h1>近期学习情况</h1></div>
+            <div class="panel"><h2>近 7 天学习情况</h2><div id="recentList"></div></div>
             <div class="cards">
-                <div class="card blue">
-                    <p>学习时间</p>
-                    <strong id="recentTime">0</strong>
-                    <span>分钟</span>
-                </div>
-
-                <div class="card green">
-                    <p>学习天数</p>
-                    <strong id="recentDays">0</strong>
-                    <span>天</span>
-                </div>
-
-                <div class="card orange">
-                    <p>日均时间</p>
-                    <strong id="recentAverage">0</strong>
-                    <span>分钟</span>
-                </div>
+                <div class="card blue"><p>学习时间</p><strong id="recentTime">0</strong><span>分钟</span></div>
+                <div class="card green"><p>学习天数</p><strong id="recentDays">0</strong><span>天</span></div>
+                <div class="card orange"><p>日均时间</p><strong id="recentAverage">0</strong><span>分钟</span></div>
             </div>
         </div>
 
-        <div id="weak" class="page">
-            <div class="page-title">
-                <h1>薄弱知识点</h1>
-            </div>
-            <div id="weakList"></div>
-        </div>
+        <div id="weak" class="page"><div class="page-title"><h1>薄弱知识点</h1></div><div id="weakList"></div></div>
 
         <div id="count" class="page">
-            <div class="page-title">
-                <h1>学习统计</h1>
-            </div>
-
+            <div class="page-title"><h1>学习统计</h1></div>
             <div class="cards">
-                <div class="card blue">
-                    <p>知识点总数</p>
-                    <strong id="countKnowledge">0</strong>
-                </div>
-
-                <div class="card green">
-                    <p>平均熟练度</p>
-                    <strong id="countProficiency">0</strong>
-                    <span>%</span>
-                </div>
-
-                <div class="card orange">
-                    <p>累计学习时间</p>
-                    <strong id="countTime">0</strong>
-                    <span>分钟</span>
-                </div>
-
-                <div class="card purple">
-                    <p>累计学习次数</p>
-                    <strong id="countRecord">0</strong>
-                    <span>次</span>
-                </div>
+                <div class="card blue"><p>知识点总数</p><strong id="countKnowledge">0</strong></div>
+                <div class="card green"><p>平均熟练度</p><strong id="countProficiency">0</strong><span>%</span></div>
+                <div class="card orange"><p>累计学习时间</p><strong id="countTime">0</strong><span>分钟</span></div>
+                <div class="card purple"><p>累计学习次数</p><strong id="countRecord">0</strong><span>次</span></div>
             </div>
-
-            <div class="panel">
-                <h2>知识点掌握情况</h2>
-                <div id="countDetail"></div>
-            </div>
+            <div class="panel"><h2>知识点掌握情况</h2><div id="countDetail"></div></div>
         </div>
 
-        <div id="delete" class="page">
-            <div class="page-title">
-                <h1>删除知识点</h1>
-            </div>
-            <div id="deleteList"></div>
-        </div>
-
+        <div id="delete" class="page"><div class="page-title"><h1>删除知识点</h1></div><div id="deleteList"></div></div>
     </main>
 </div>
 
 <div id="addModal" class="modal">
     <div class="modal-box">
-        <div class="modal-title">
-            <h2>添加知识点</h2>
-            <button onclick="closeAdd()">×</button>
-        </div>
-
-        <label>科目</label>
-        <input id="addSubject" type="text" placeholder="例如：数学">
-
-        <label>知识点</label>
-        <input id="addKnowledge" type="text" placeholder="例如：二次函数">
-
-        <label>学习时间（分钟）</label>
-        <input id="addTime" type="number" min="1" max="600" value="30">
-
+        <div class="modal-title"><h2>添加知识点</h2><button onclick="closeAdd()">×</button></div>
+        <label>科目</label><input id="addSubject" type="text" placeholder="例如：数学">
+        <label>知识点</label><input id="addKnowledge" type="text" placeholder="例如：二次函数">
+        <label>学习时间（分钟）</label><input id="addTime" type="number" min="1" max="600" value="30">
         <button class="primary big" onclick="addNode()">添加</button>
     </div>
 </div>
-
 <div id="message" class="message"></div>
-
 <script src="script.js"></script>
-
 </body>
 </html>
