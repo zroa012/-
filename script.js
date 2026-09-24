@@ -528,54 +528,244 @@ function openTool(url) {
     window.open(url,"_blank","noopener,noreferrer");
 }
 
+
+function openFunctionZoom() {
+    const source = document.getElementById("functionCanvas");
+    const modal = document.getElementById("functionZoomModal");
+    const target = document.getElementById("functionZoomCanvas");
+    const expr = document.getElementById("functionZoomExpression");
+    if (!source || !modal || !target) return;
+    if (source.dataset.drawn !== "true") { drawFunctionGraph(); }
+    if (source.dataset.drawn !== "true") return;
+    if (expr) expr.textContent = `y = ${source.dataset.expression || ""}`;
+    functionZoomScale = 1;
+    renderFunctionZoom();
+    modal.classList.add("show");
+    document.body.style.overflow = "hidden";
+}
+
+function closeFunctionZoom(event) {
+    if (event && event.target && event.target.id !== "functionZoomModal") return;
+    const modal = document.getElementById("functionZoomModal");
+    if (modal) modal.classList.remove("show");
+    document.body.style.overflow = "";
+}
+
+let functionZoomScale = 1;
+
+function zoomFunctionGraph(factor) {
+    functionZoomScale = Math.max(0.6, Math.min(2.5, functionZoomScale * factor));
+    renderFunctionZoom();
+}
+
+function resetFunctionZoom() {
+    functionZoomScale = 1;
+    renderFunctionZoom();
+}
+
+function renderFunctionZoom() {
+    const source = document.getElementById("functionCanvas");
+    const target = document.getElementById("functionZoomCanvas");
+    if (!source || !target || source.dataset.drawn !== "true") return;
+    const rect = target.getBoundingClientRect();
+    const width = Math.max(520, Math.floor(rect.width || 900));
+    const height = Math.max(360, Math.floor(rect.height || 600));
+    const dpr = window.devicePixelRatio || 1;
+    target.width = width * dpr;
+    target.height = height * dpr;
+    const ctx = target.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0,0,width,height);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0,0,width,height);
+    const scale = functionZoomScale;
+    const sw = source.width / dpr;
+    const sh = source.height / dpr;
+    const dw = sw * scale;
+    const dh = sh * scale;
+    const dx = (width - dw) / 2;
+    const dy = (height - dh) / 2;
+    ctx.drawImage(source, dx, dy, dw, dh);
+}
+
 function drawFunctionGraph() {
-    const canvas=document.getElementById("functionCanvas");
-    const input=document.getElementById("functionInput");
-    if(!canvas || !input) return;
-    const expr=input.value.trim().replace(/×/g,"*").replace(/π/g,"Math.PI");
-    if(!expr){showMessage("请输入函数表达式");return;}
+    const canvas = document.getElementById("functionCanvas");
+    const input = document.getElementById("functionInput");
+    if (!canvas || !input) return;
+
+    const expr = input.value.trim().replace(/×/g, "*").replace(/π/g, "Math.PI");
+    if (!expr) { showMessage("请输入函数表达式"); return; }
+
     let compiled;
     try {
-        const safe=expr
-            .replace(/\^/g,"**")
-            .replace(/\bsin\b/gi,"Math.sin")
-            .replace(/\bcos\b/gi,"Math.cos")
-            .replace(/\btan\b/gi,"Math.tan")
-            .replace(/\bsqrt\b/gi,"Math.sqrt")
-            .replace(/\babs\b/gi,"Math.abs")
-            .replace(/\blog\b/gi,"Math.log10");
-        if(!/^[0-9xX+\-*/().,\sA-Za-z*_]+$/.test(safe)) throw new Error("非法字符");
-        compiled=new Function("x",`return (${safe});`);
-    } catch(e) { showMessage("函数表达式无法识别，请检查格式"); return; }
-    const rect=canvas.getBoundingClientRect();
-    const width=Math.max(320,Math.floor(rect.width||650));
-    const height=320;
-    const dpr=window.devicePixelRatio||1;
-    canvas.width=width*dpr; canvas.height=height*dpr;
-    const ctx=canvas.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0);
-    ctx.clearRect(0,0,width,height);
-    const xmin=-10,xmax=10,ymin=-10,ymax=10;
-    const X=x=> (x-xmin)/(xmax-xmin)*width;
-    const Y=y=> height-(y-ymin)/(ymax-ymin)*height;
-    ctx.strokeStyle="#e2e6ed"; ctx.lineWidth=1;
-    for(let v=-10;v<=10;v++){
-        const px=X(v), py=Y(v);
-        ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,height);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(width,py);ctx.stroke();
+        const safe = expr
+            .replace(/\^/g, "**")
+            .replace(/\bsin\b/gi, "Math.sin")
+            .replace(/\bcos\b/gi, "Math.cos")
+            .replace(/\btan\b/gi, "Math.tan")
+            .replace(/\bsqrt\b/gi, "Math.sqrt")
+            .replace(/\babs\b/gi, "Math.abs")
+            .replace(/\blog\b/gi, "Math.log10");
+        if (!/^[0-9xX+\-*/().,\sA-Za-z*_]+$/.test(safe)) throw new Error("非法字符");
+        compiled = new Function("x", `return (${safe});`);
+    } catch (e) {
+        showMessage("函数表达式无法识别，请检查格式");
+        return;
     }
-    ctx.strokeStyle="#9aa3b2";ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(X(0),0);ctx.lineTo(X(0),height);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(0,Y(0));ctx.lineTo(width,Y(0));ctx.stroke();
-    ctx.strokeStyle="#4f7cff";ctx.lineWidth=2.5;ctx.beginPath();
-    let drawing=false;
-    for(let i=0;i<=width;i++){
-        const x=xmin+(xmax-xmin)*i/width;
-        let y; try{y=Number(compiled(x));}catch{y=NaN;}
-        if(!Number.isFinite(y) || Math.abs(y)>100){drawing=false;continue;}
-        const px=X(x),py=Y(y);
-        if(!drawing){ctx.moveTo(px,py);drawing=true;} else ctx.lineTo(px,py);
+
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(420, Math.floor(rect.width || 650));
+    const height = 380;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    // 坐标范围：-10 到 10，每 1 个单位一个刻度。
+    const xmin = -10, xmax = 10, ymin = -10, ymax = 10;
+    const padLeft = 48, padRight = 18, padTop = 18, padBottom = 36;
+    const plotW = width - padLeft - padRight;
+    const plotH = height - padTop - padBottom;
+    const X = x => padLeft + (x - xmin) / (xmax - xmin) * plotW;
+    const Y = y => padTop + plotH - (y - ymin) / (ymax - ymin) * plotH;
+
+    // 背景
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+
+    // 网格和刻度
+    ctx.font = "11px Arial, Microsoft YaHei, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    for (let v = xmin; v <= xmax; v++) {
+        const px = X(v);
+        ctx.strokeStyle = v === 0 ? "#9aa3b2" : "#e8ebf0";
+        ctx.lineWidth = v === 0 ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(px, padTop); ctx.lineTo(px, padTop + plotH); ctx.stroke();
+        if (v !== 0) {
+            ctx.fillStyle = "#707988";
+            ctx.fillText(String(v), px, padTop + plotH + 7);
+        }
+    }
+
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    for (let v = ymin; v <= ymax; v++) {
+        const py = Y(v);
+        ctx.strokeStyle = v === 0 ? "#9aa3b2" : "#e8ebf0";
+        ctx.lineWidth = v === 0 ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(padLeft + plotW, py); ctx.stroke();
+        if (v !== 0) {
+            ctx.fillStyle = "#707988";
+            ctx.fillText(String(v), padLeft - 8, py);
+        }
+    }
+
+    // 原点
+    ctx.fillStyle = "#606978";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+    ctx.fillText("0", padLeft - 8, Y(0) + 7);
+
+    // X / Y 轴名称
+    ctx.font = "bold 13px Arial, Microsoft YaHei, sans-serif";
+    ctx.fillStyle = "#4f5968";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+    ctx.fillText("x", padLeft + plotW, padTop + plotH + 23);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("y", padLeft + 7, padTop + 3);
+
+    // 函数曲线
+    ctx.strokeStyle = "#4f7cff";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    let drawing = false;
+    let previousY = null;
+    for (let i = 0; i <= plotW; i++) {
+        const x = xmin + (xmax - xmin) * i / plotW;
+        let y;
+        try { y = Number(compiled(x)); } catch { y = NaN; }
+        const px = X(x);
+        const py = Y(y);
+
+        // 跳过无定义值、无穷值以及跨越整个绘图区的渐近线跳变。
+        if (!Number.isFinite(y) || Math.abs(y) > 100 || (previousY !== null && Math.abs(y - previousY) > 25)) {
+            drawing = false;
+            previousY = null;
+            continue;
+        }
+        if (!drawing) { ctx.moveTo(px, py); drawing = true; }
+        else ctx.lineTo(px, py);
+        previousY = y;
     }
     ctx.stroke();
+
+    // 保存当前函数，供导出图片使用。
+    canvas.dataset.expression = input.value.trim();
+    canvas.dataset.drawn = "true";
+}
+
+(function initFunctionGraphZoom() {
+    document.addEventListener("click", function(e) {
+        const canvas = e.target && e.target.closest ? e.target.closest("#functionCanvas") : null;
+        if (canvas) openFunctionZoom();
+    });
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") closeFunctionZoom();
+    });
+})();
+
+function exportFunctionGraph() {
+    const canvas = document.getElementById("functionCanvas");
+    const input = document.getElementById("functionInput");
+    if (!canvas || !input) return;
+
+    if (canvas.dataset.drawn !== "true") {
+        drawFunctionGraph();
+    }
+    if (canvas.dataset.drawn !== "true") return;
+
+    const expression = canvas.dataset.expression || input.value.trim() || "未知函数";
+    const out = document.createElement("canvas");
+    const W = 1200, H = 760;
+    out.width = W;
+    out.height = H;
+    const ctx = out.getContext("2d");
+
+    ctx.fillStyle = "#f5f7fb";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(45, 35, W - 90, H - 70);
+
+    ctx.fillStyle = "#202938";
+    ctx.font = "bold 30px Arial, Microsoft YaHei, sans-serif";
+    ctx.fillText("智能学习助手 · 函数图像", 80, 85);
+    ctx.fillStyle = "#606978";
+    ctx.font = "18px Arial, Microsoft YaHei, sans-serif";
+    ctx.fillText(`y = ${expression}`, 80, 120);
+    ctx.font = "14px Arial, Microsoft YaHei, sans-serif";
+    ctx.fillText(`坐标范围：x ∈ [-10, 10]，y ∈ [-10, 10] · ${formatDateChinese()}`, 80, 148);
+
+    const sourceW = canvas.width / (window.devicePixelRatio || 1);
+    const sourceH = canvas.height / (window.devicePixelRatio || 1);
+    const targetX = 80, targetY = 175, targetW = 1040, targetH = 500;
+    // 直接缩放已绘制好的坐标系，刻度和 x/y 轴名称也会一起导出。
+    ctx.drawImage(canvas, 0, 0, sourceW, sourceH, targetX, targetY, targetW, targetH);
+
+    ctx.fillStyle = "#8c95a3";
+    ctx.font = "13px Arial, Microsoft YaHei, sans-serif";
+    ctx.fillText("函数图像由智能学习助手生成", 80, 705);
+
+    const a = document.createElement("a");
+    a.download = `函数图像_${todayString()}.png`;
+    a.href = out.toDataURL("image/png");
+    a.click();
+    showMessage("函数图像已导出为图片");
 }
 
 function exportStudyImage() {
@@ -1102,3 +1292,147 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => { drawFunctionGraph(); }, 0);
     window.addEventListener("resize", () => { renderRecent(); drawFunctionGraph(); });
 });
+
+/* =========================
+   本地学习工具：几何画板 + 科学计算器
+   不依赖任何外部网站
+   ========================= */
+function toggleLocalTool(id, button) {
+    const panel = document.getElementById(id);
+    if (!panel) return;
+    const opening = panel.style.display === "none" || !panel.style.display;
+    panel.style.display = opening ? "block" : "none";
+    if (button) button.textContent = opening ? "收起工具" : (id === "geometryPanel" ? "打开几何画板" : "打开计算器");
+    if (opening && id === "geometryPanel") setTimeout(initGeometryBoard, 0);
+}
+
+let geometryState = { tool: "select", points: [], objects: [], initialized: false };
+let geometryDrag = null;
+
+function geometryCanvasSize() {
+    const canvas = document.getElementById("geometryCanvas");
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(420, Math.floor(rect.width || 650));
+    const h = Math.max(300, Math.floor(rect.height || 420));
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== w*dpr || canvas.height !== h*dpr) {
+        canvas.width = w*dpr; canvas.height = h*dpr;
+    }
+    return {canvas,w,h,dpr};
+}
+
+function geoToCanvas(e) {
+    const canvas = document.getElementById("geometryCanvas");
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX-r.left, y: e.clientY-r.top };
+}
+
+function drawGeometryBoard() {
+    const size = geometryCanvasSize();
+    if (!size) return;
+    const {canvas,w,h,dpr}=size;
+    const ctx=canvas.getContext("2d");
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
+    const grid=25;
+    ctx.strokeStyle="#edf0f4"; ctx.lineWidth=1;
+    for(let x=0;x<=w;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+    for(let y=0;y<=h;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+    const ox=w/2, oy=h/2;
+    ctx.strokeStyle="#aab2bf"; ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(0,oy);ctx.lineTo(w,oy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ox,0);ctx.lineTo(ox,h);ctx.stroke();
+    ctx.fillStyle="#687385";ctx.font="12px Arial, Microsoft YaHei,sans-serif";
+    ctx.fillText("x",w-16,oy-7);ctx.fillText("y",ox+7,15);ctx.fillText("0",ox+6,oy+14);
+
+    geometryState.objects.forEach(o=>{
+        ctx.strokeStyle="#4f7cff";ctx.fillStyle="#4f7cff";ctx.lineWidth=2;
+        if(o.type==="point"){ctx.beginPath();ctx.arc(o.a.x,o.a.y,5,0,Math.PI*2);ctx.fill();}
+        if(o.type==="segment"||o.type==="line"){
+            let dx=o.b.x-o.a.x,dy=o.b.y-o.a.y;
+            let a=o.a,b=o.b;
+            if(o.type==="line"){
+                const len=Math.hypot(dx,dy)||1, ux=dx/len,uy=dy/len;
+                a={x:o.a.x-ux*1500,y:o.a.y-uy*1500};b={x:o.a.x+ux*1500,y:o.a.y+uy*1500};
+            }
+            ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        }
+        if(o.type==="circle"){ctx.beginPath();ctx.arc(o.a.x,o.a.y,o.r,0,Math.PI*2);ctx.stroke();}
+        if(o.type==="triangle"){ctx.beginPath();ctx.moveTo(o.a.x,o.a.y);ctx.lineTo(o.b.x,o.b.y);ctx.lineTo(o.c.x,o.c.y);ctx.closePath();ctx.stroke();}
+    });
+    geometryState.points.forEach((p,i)=>{
+        ctx.fillStyle="#202938";ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();
+        ctx.font="bold 12px Arial, Microsoft YaHei,sans-serif";ctx.fillText(String.fromCharCode(65+i),p.x+7,p.y-7);
+    });
+}
+
+function initGeometryBoard(){
+    const canvas=document.getElementById("geometryCanvas");
+    if(!canvas) return;
+    if(!geometryState.initialized){
+        geometryState.initialized=true;
+        document.querySelectorAll("[data-geo-tool]").forEach(btn=>btn.addEventListener("click",()=>{
+            geometryState.tool=btn.dataset.geoTool; geometryState.points=[];
+            document.querySelectorAll("[data-geo-tool]").forEach(b=>b.classList.toggle("active",b===btn));
+            drawGeometryBoard();
+        }));
+        canvas.addEventListener("click",geometryClick);
+    }
+    drawGeometryBoard();
+}
+
+function geometryClick(e){
+    const p=geoToCanvas(e), tool=geometryState.tool;
+    if(tool==="select") return;
+    geometryState.points.push(p);
+    const need={point:1,segment:2,line:2,circle:2,triangle:3}[tool];
+    if(geometryState.points.length<need){drawGeometryBoard();return;}
+    const a=geometryState.points[0], b=geometryState.points[1], c=geometryState.points[2];
+    if(tool==="point") geometryState.objects.push({type:"point",a});
+    if(tool==="segment") geometryState.objects.push({type:"segment",a,b});
+    if(tool==="line") geometryState.objects.push({type:"line",a,b});
+    if(tool==="circle") geometryState.objects.push({type:"circle",a,r:Math.max(3,Math.hypot(b.x-a.x,b.y-a.y))});
+    if(tool==="triangle") geometryState.objects.push({type:"triangle",a,b,c});
+    geometryState.points=[];drawGeometryBoard();
+}
+
+function clearGeometryBoard(){ geometryState.points=[];geometryState.objects=[];drawGeometryBoard(); }
+
+function calculatorInsert(v){
+    const d=document.getElementById("calculatorDisplay"); if(!d)return;
+    d.value += v; d.focus();
+}
+function calculateExpression(expr){
+    let s=String(expr||"").replace(/×/g,"*").replace(/÷/g,"/").replace(/π/g,"Math.PI").replace(/\be\b/g,"Math.E").replace(/\^/g,"**");
+    s=s.replace(/sin\(/gi,"__SIN__(").replace(/cos\(/gi,"__COS__(").replace(/tan\(/gi,"__TAN__(").replace(/sqrt\(/gi,"Math.sqrt(").replace(/log\(/gi,"Math.log10(").replace(/ln\(/gi,"Math.log(");
+    if(!/^[0-9+\-*/().,%\sA-Za-z_*]+$/.test(s)) throw new Error("非法字符");
+    s=s.replace(/__SIN__\(/g,"sin(").replace(/__COS__\(/g,"cos(").replace(/__TAN__\(/g,"tan(");
+    const deg=v=>Math.PI/180*v;
+    const rad=v=>v*180/Math.PI;
+    const fn=new Function("sin","cos","tan","rad",`return (${s});`);
+    const result=fn(x=>Math.sin(deg(x)),x=>Math.cos(deg(x)),x=>Math.tan(deg(x)),rad);
+    if(!Number.isFinite(result)) throw new Error("结果无效");
+    return result;
+}
+
+function initCalculator(){
+    const display=document.getElementById("calculatorDisplay"); if(!display||display.dataset.init)return;
+    display.dataset.init="true";
+    document.querySelectorAll("[data-calc]").forEach(btn=>btn.addEventListener("click",()=>{
+        const type=btn.dataset.calc,v=btn.textContent;
+        if(type==="clear"){display.value="";return;}
+        if(type==="back"){display.value=display.value.slice(0,-1);return;}
+        if(type==="equals"){
+            try{display.value=String(calculateExpression(display.value));document.getElementById("calculatorStatus").textContent="计算完成 · 角度模式：DEG";}
+            catch(e){document.getElementById("calculatorStatus").textContent="表达式无法计算，请检查输入";}
+            return;
+        }
+        calculatorInsert(v);
+    }));
+    display.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();document.querySelector('[data-calc="equals"]').click();}});
+}
+
+document.addEventListener("DOMContentLoaded",()=>{initCalculator();});
+window.addEventListener("resize",()=>{if(geometryState.initialized)drawGeometryBoard();});

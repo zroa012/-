@@ -292,8 +292,21 @@
                 <div class="tool-card">
                     <div class="tool-icon">📐</div>
                     <h2>几何画板</h2>
-                    <p>用于点、线、角、三角形、圆等几何图形的动态探索。</p>
-                    <button class="primary" onclick="openTool('https://www.geogebra.org/geometry')">打开几何画板</button>
+                    <p>直接在学习助手中绘制点、线段、直线、圆和三角形，无需打开其他网站。</p>
+                    <button class="primary" type="button" onclick="toggleLocalTool('geometryPanel', this)">打开几何画板</button>
+                    <div id="geometryPanel" class="local-tool-panel" style="display:none;">
+                        <div class="geometry-toolbar">
+                            <button type="button" class="tool-choice active" data-geo-tool="select">选择</button>
+                            <button type="button" class="tool-choice" data-geo-tool="point">点</button>
+                            <button type="button" class="tool-choice" data-geo-tool="segment">线段</button>
+                            <button type="button" class="tool-choice" data-geo-tool="line">直线</button>
+                            <button type="button" class="tool-choice" data-geo-tool="circle">圆</button>
+                            <button type="button" class="tool-choice" data-geo-tool="triangle">三角形</button>
+                            <button type="button" class="secondary" onclick="clearGeometryBoard()">清空</button>
+                        </div>
+                        <canvas id="geometryCanvas" class="geometry-canvas"></canvas>
+                        <p class="tool-tip">点击“点”可添加点；线段、直线、圆和三角形需要依次点击两个或三个位置。</p>
+                    </div>
                 </div>
 
                 <div class="tool-card">
@@ -305,8 +318,9 @@
                             <span>y =</span>
                             <input id="functionInput" value="sin(x)" placeholder="例如 x^2、sin(x)、2*x+1">
                             <button class="primary" onclick="drawFunctionGraph()">绘制</button>
+                            <button class="secondary function-export-btn" type="button" onclick="exportFunctionGraph()">导出图片</button>
                         </div>
-                        <canvas id="functionCanvas" class="function-canvas"></canvas>
+                        <div class="function-canvas-wrap" title="点击图像放大"><canvas id="functionCanvas" class="function-canvas"></canvas><div class="function-canvas-hint">点击图像可放大查看</div></div>
                         <p class="tool-tip">支持：x、+、-、*、/、^、sin、cos、tan、sqrt、abs、log。</p>
                     </div>
                 </div>
@@ -314,15 +328,50 @@
                 <div class="tool-card">
                     <div class="tool-icon">🧮</div>
                     <h2>科学计算器</h2>
-                    <p>快速进行常见数学计算，适合做题时辅助验算。</p>
-                    <button class="secondary" onclick="openTool('https://www.desmos.com/scientific')">打开科学计算器</button>
+                    <p>直接在学习助手中进行四则运算、平方、开方、三角函数和对数计算。</p>
+                    <button class="secondary" type="button" onclick="toggleLocalTool('calculatorPanel', this)">打开计算器</button>
+                    <div id="calculatorPanel" class="local-tool-panel" style="display:none;">
+                        <div class="calculator">
+                            <input id="calculatorDisplay" class="calculator-display" value="" placeholder="输入表达式，例如 sin(30)+5^2" autocomplete="off">
+                            <div class="calculator-status" id="calculatorStatus">角度模式：DEG</div>
+                            <div class="calculator-grid">
+                                <button type="button" data-calc="clear">AC</button><button type="button" data-calc="back">⌫</button><button type="button" data-calc="value">π</button><button type="button" data-calc="value">e</button>
+                                <button type="button" data-calc="value">sin(</button><button type="button" data-calc="value">cos(</button><button type="button" data-calc="value">tan(</button><button type="button" data-calc="value">sqrt(</button>
+                                <button type="button" data-calc="value">log(</button><button type="button" data-calc="value">ln(</button><button type="button" data-calc="value">^</button><button type="button" data-calc="value">%</button>
+                                <button type="button" data-calc="value">7</button><button type="button" data-calc="value">8</button><button type="button" data-calc="value">9</button><button type="button" data-calc="value">/</button>
+                                <button type="button" data-calc="value">4</button><button type="button" data-calc="value">5</button><button type="button" data-calc="value">6</button><button type="button" data-calc="value">*</button>
+                                <button type="button" data-calc="value">1</button><button type="button" data-calc="value">2</button><button type="button" data-calc="value">3</button><button type="button" data-calc="value">-</button>
+                                <button type="button" data-calc="value">0</button><button type="button" data-calc="value">.</button><button type="button" data-calc="value">)</button><button type="button" data-calc="value">+</button>
+                                <button type="button" class="calculator-equals" data-calc="equals">=</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="tool-card">
                     <div class="tool-icon">📊</div>
                     <h2>图形计算器</h2>
-                    <p>适合函数、方程、不等式和坐标图像的可视化探索。</p>
-                    <button class="secondary" onclick="openTool('https://www.desmos.com/calculator')">打开图形计算器</button>
+                    <p>函数图像就是本地版图形计算器，可以输入函数并在坐标系中查看曲线。</p>
+                    <button class="secondary" type="button" onclick="document.getElementById('functionInput').focus()">直接使用下方函数图像</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="functionZoomModal" class="function-zoom-modal" onclick="closeFunctionZoom(event)">
+            <div class="function-zoom-card" onclick="event.stopPropagation()">
+                <div class="function-zoom-head">
+                    <div>
+                        <h2>函数图像</h2>
+                        <p id="functionZoomExpression">y = sin(x)</p>
+                    </div>
+                    <button class="function-zoom-close" type="button" onclick="closeFunctionZoom()">×</button>
+                </div>
+                <canvas id="functionZoomCanvas" class="function-zoom-canvas"></canvas>
+                <div class="function-zoom-actions">
+                    <button class="secondary" type="button" onclick="zoomFunctionGraph(0.8)">缩小</button>
+                    <button class="secondary" type="button" onclick="zoomFunctionGraph(1.25)">放大</button>
+                    <button class="secondary" type="button" onclick="resetFunctionZoom()">重置</button>
+                    <button class="primary" type="button" onclick="exportFunctionGraph()">导出图片</button>
                 </div>
             </div>
         </div>

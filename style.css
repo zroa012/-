@@ -815,6 +815,7 @@ body.study-lock-sidebar .main {
 .function-row { display:flex; align-items:center; gap:8px; }
 .function-row input { flex:1; min-width:0; padding:11px 12px; border:1px solid #dfe3e9; border-radius:8px; outline:none; font-size:14px; }
 .function-row button { margin-top:0 !important; }
+.function-export-btn { width:auto; margin-top:0 !important; white-space:nowrap; }
 .function-canvas { display:block; width:100%; height:320px; margin-top:14px; border:1px solid #e8ebf0; border-radius:10px; background:#fff; }
 .tool-tip { margin-top:8px !important; font-size:11px !important; }
 
@@ -892,3 +893,36 @@ body.study-lock-sidebar .main {
     .home-review-item, .wrong-item-head { align-items:flex-start; }
     .wrong-form-buttons { flex-direction:column; }
 }
+
+
+/* 函数图像放大查看 */
+.function-canvas-wrap { position:relative; cursor:zoom-in; }
+.function-canvas-wrap .function-canvas { cursor:zoom-in; }
+.function-canvas-hint { position:absolute; right:12px; top:10px; padding:5px 9px; border-radius:8px; background:rgba(255,255,255,.92); color:#707988; font-size:12px; pointer-events:none; box-shadow:0 2px 8px rgba(30,50,80,.08); }
+.function-zoom-modal { position:fixed; inset:0; z-index:3000; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(20,28,42,.62); backdrop-filter:blur(4px); }
+.function-zoom-modal.show { display:flex; }
+.function-zoom-card { width:min(1100px,96vw); max-height:94vh; overflow:auto; background:#fff; border-radius:18px; padding:22px; box-shadow:0 18px 60px rgba(0,0,0,.25); }
+.function-zoom-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.function-zoom-head h2 { margin:0 0 6px; color:#202938; }
+.function-zoom-head p { margin:0; color:#606978; }
+.function-zoom-close { border:0; background:#f1f3f7; color:#4d5665; width:38px; height:38px; border-radius:10px; font-size:28px; line-height:1; cursor:pointer; }
+.function-zoom-canvas { display:block; width:100%; height:min(68vh,680px); min-height:360px; margin-top:16px; border:1px solid #e8ebf0; border-radius:12px; background:#fff; }
+.function-zoom-actions { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.function-zoom-actions button { width:auto !important; margin-top:0 !important; }
+@media (max-width:700px) { .function-zoom-modal { padding:10px; } .function-zoom-card { padding:14px; } .function-zoom-canvas { min-height:300px; height:55vh; } .function-canvas-hint { display:none; } }
+
+/* ===== 本地几何画板 / 计算器 ===== */
+.local-tool-panel{margin-top:16px;padding:16px;border:1px solid #e8ebf0;border-radius:14px;background:#f8faff;}
+.geometry-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.tool-choice{width:auto!important;margin-top:0!important;padding:8px 12px;border:1px solid #dce2eb;border-radius:9px;background:#fff;color:#4d5665;cursor:pointer;}
+.tool-choice.active{background:#4f7cff;color:#fff;border-color:#4f7cff;}
+.geometry-canvas{display:block;width:100%;height:420px;border:1px solid #dfe4ec;border-radius:10px;background:#fff;cursor:crosshair;touch-action:none;}
+.calculator{max-width:520px;margin:0 auto;}
+.calculator-display{width:100%;box-sizing:border-box;padding:14px 16px;border:1px solid #d8dee8;border-radius:10px;background:#fff;font-size:22px;text-align:right;color:#202938;outline:none;}
+.calculator-display:focus{border-color:#4f7cff;box-shadow:0 0 0 3px rgba(79,124,255,.12);}
+.calculator-status{min-height:20px;margin:8px 2px;color:#707988;font-size:12px;text-align:right;}
+.calculator-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.calculator-grid button{width:100%;margin:0!important;min-height:44px;border:1px solid #dfe4ec;border-radius:9px;background:#fff;color:#303947;font-size:16px;cursor:pointer;}
+.calculator-grid button:hover{background:#f0f4fb;}
+.calculator-grid .calculator-equals{grid-column:span 4;background:#4f7cff;color:#fff;border-color:#4f7cff;}
+@media(max-width:700px){.geometry-canvas{height:320px}.local-tool-panel{padding:10px}.geometry-toolbar{gap:6px}}
