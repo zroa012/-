@@ -7,6 +7,8 @@
 
 let knowledge = JSON.parse(localStorage.getItem("studyKnowledge") || "[]");
 let studyRecords = JSON.parse(localStorage.getItem("studyRecords") || "[]");
+let wrongQuestions = JSON.parse(localStorage.getItem("wrongQuestions") || "[]");
+let pendingStudyNodeId = null;
 
 let timerInterval = null;
 let timerSeconds = 1800;
@@ -21,6 +23,7 @@ let leftWhileRunning = false;
 function saveData() {
     localStorage.setItem("studyKnowledge", JSON.stringify(knowledge));
     localStorage.setItem("studyRecords", JSON.stringify(studyRecords));
+    localStorage.setItem("wrongQuestions", JSON.stringify(wrongQuestions));
 }
 
 function todayString() {
@@ -302,9 +305,10 @@ function studyTime() {
     node.nextReview = `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,"0")}-${String(next.getDate()).padStart(2,"0")}`;
 
     saveData();
+    pendingStudyNodeId = node.id;
     resetTimer(true);
-    showMessage("本次学习已记录");
     refresh();
+    openWrongQuestionModal();
 }
 
 function showAdd() {
@@ -407,6 +411,7 @@ function refresh() {
     renderHomePlan();
     renderHomeWeak();
     renderHomeStats();
+    renderWrongQuestions();
 }
 
 function renderKnowledge() {
@@ -632,14 +637,119 @@ function renderDelete() {
 function renderHomePlan() {
     const el = document.getElementById("homePlan");
     if (!el) return;
-    const list = dueNodes().slice(0,3);
+    const list = dueNodes().slice(0, 5);
 
     el.innerHTML = list.length ? list.map(n => `
-        <div class="recent-row">
-            <span>${escapeHtml(n.name)}</span>
-            <strong>${n.time} 分钟</strong>
+        <div class="home-review-item">
+            <div>
+                <div class="item-title">${escapeHtml(n.name)}</div>
+                <div class="item-sub">${escapeHtml(n.subject)} · 建议学习 ${n.time} 分钟</div>
+            </div>
+            <button class="review-button" onclick="reviewNode('${String(n.id)}')">去学习</button>
         </div>
-    `).join("") : '<div class="empty">今天暂无复习计划。</div>';
+    `).join("") : '<div class="empty">今天暂无需要复习的知识点。</div>';
+}
+function openWrongQuestionModal() {
+    const modal = document.getElementById("wrongQuestionModal");
+    const choice = document.getElementById("wrongQuestionChoice");
+    const form = document.getElementById("wrongQuestionForm");
+    if (!modal) return;
+    if (choice) choice.style.display = "block";
+    if (form) form.style.display = "none";
+    clearWrongQuestionForm();
+    modal.classList.add("show");
+}
+
+function closeWrongQuestionModal() {
+    const modal = document.getElementById("wrongQuestionModal");
+    if (modal) modal.classList.remove("show");
+    pendingStudyNodeId = null;
+    refresh();
+    showMessage("本次学习已记录");
+}
+
+function showWrongQuestionForm() {
+    const choice = document.getElementById("wrongQuestionChoice");
+    const form = document.getElementById("wrongQuestionForm");
+    if (choice) choice.style.display = "none";
+    if (form) form.style.display = "block";
+}
+
+function clearWrongQuestionForm() {
+    ["wrongContent", "wrongMistake", "wrongAnswer"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+}
+
+function saveWrongQuestion(continueAdding) {
+    const content = document.getElementById("wrongContent")?.value.trim();
+    const mistake = document.getElementById("wrongMistake")?.value.trim();
+    const answer = document.getElementById("wrongAnswer")?.value.trim();
+
+    if (!content) {
+        showMessage("请先填写题目或错题内容");
+        return;
+    }
+
+    const node = pendingStudyNodeId ? getNode(pendingStudyNodeId) : null;
+    wrongQuestions.unshift({
+        id: Date.now() + Math.random(),
+        date: todayString(),
+        nodeId: pendingStudyNodeId || "",
+        subject: node?.subject || "未分类",
+        knowledgeName: node?.name || "未指定知识点",
+        content,
+        mistake,
+        answer
+    });
+    saveData();
+    renderWrongQuestions();
+    clearWrongQuestionForm();
+    showMessage("错题已加入错题本");
+
+    if (!continueAdding) {
+        closeWrongQuestionModal();
+        return;
+    }
+
+    const form = document.getElementById("wrongQuestionForm");
+    if (form) form.style.display = "block";
+}
+
+function deleteWrongQuestion(id) {
+    if (!confirm("确定要删除这道错题吗？")) return;
+    wrongQuestions = wrongQuestions.filter(x => String(x.id) !== String(id));
+    saveData();
+    renderWrongQuestions();
+    showMessage("错题已删除");
+}
+
+function renderWrongQuestions() {
+    const el = document.getElementById("wrongList");
+    const count = document.getElementById("wrongCountTip");
+    if (count) count.textContent = `${wrongQuestions.length} 道错题`;
+    if (!el) return;
+
+    if (!wrongQuestions.length) {
+        el.innerHTML = '<div class="empty">还没有错题。完成学习后，如果有错题可以直接记录到这里。</div>';
+        return;
+    }
+
+    el.innerHTML = wrongQuestions.map(q => `
+        <div class="wrong-item">
+            <div class="wrong-item-head">
+                <div>
+                    <div class="item-title">${escapeHtml(q.knowledgeName)}</div>
+                    <div class="item-sub">${escapeHtml(q.subject)} · ${escapeHtml(q.date)}</div>
+                </div>
+                <button class="delete-btn" onclick="deleteWrongQuestion('${String(q.id)}')">删除</button>
+            </div>
+            <div class="wrong-content"><strong>题目：</strong>${escapeHtml(q.content)}</div>
+            ${q.mistake ? `<div class="wrong-content"><strong>我的错误：</strong>${escapeHtml(q.mistake)}</div>` : ""}
+            ${q.answer ? `<div class="wrong-content"><strong>正确答案 / 解析：</strong>${escapeHtml(q.answer)}</div>` : ""}
+        </div>
+    `).join("");
 }
 
 function renderHomeWeak() {

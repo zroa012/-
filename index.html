@@ -29,6 +29,7 @@
             <button onclick="showPage('knowledge')">📖 已学知识点</button>
             <button onclick="showPage('study')">✏️ 开始学习</button>
             <button onclick="showPage('recent')">📊 今日学习状况</button>
+            <button onclick="showPage('wrong')">📕 错题本</button>
             <button onclick="showPage('weak')">⚠️ 薄弱知识点</button>
             <button onclick="showPage('tools')">🧰 更多学习工具</button>
         </div>
@@ -261,6 +262,20 @@
             </div>
         </div>
 
+        <div id="wrong" class="page">
+            <div class="page-title">
+                <h1>错题本</h1>
+                <span class="panel-tip" id="wrongCountTip">0 道错题</span>
+            </div>
+            <div class="panel">
+                <div class="panel-title">
+                    <h2>我的错题</h2>
+                    <span class="panel-tip">学习后记录，方便下次复习</span>
+                </div>
+                <div id="wrongList"></div>
+            </div>
+        </div>
+
         <div id="weak" class="page">
             <div class="page-title">
                 <h1>薄弱知识点</h1>
@@ -339,6 +354,32 @@
         <input id="addTime" type="number" min="1" max="600" value="30">
 
         <button class="primary big" onclick="addNode()">添加</button>
+    </div>
+</div>
+
+<div id="wrongQuestionModal" class="modal">
+    <div class="modal-box wrong-modal-box">
+        <div class="modal-title">
+            <h2>本次学习有做题吗？</h2>
+            <button onclick="closeWrongQuestionModal()">×</button>
+        </div>
+        <p class="wrong-modal-subtitle">如果有错题，可以马上记录到错题本，下次复习时方便查看。</p>
+        <div id="wrongQuestionChoice" class="wrong-choice">
+            <button class="primary big" type="button" onclick="showWrongQuestionForm()">有，我有错题</button>
+            <button class="secondary big" type="button" onclick="closeWrongQuestionModal()">没有，直接完成</button>
+        </div>
+        <div id="wrongQuestionForm" class="wrong-question-form">
+            <label>题目 / 错题内容</label>
+            <textarea id="wrongContent" placeholder="例如：求二次函数顶点坐标……"></textarea>
+            <label>我的错误</label>
+            <textarea id="wrongMistake" placeholder="我在哪一步做错了？"></textarea>
+            <label>正确答案 / 解析</label>
+            <textarea id="wrongAnswer" placeholder="写下正确答案、关键步骤或解析"></textarea>
+            <div class="wrong-form-buttons">
+                <button class="primary" type="button" onclick="saveWrongQuestion(true)">保存并继续添加</button>
+                <button class="secondary" type="button" onclick="saveWrongQuestion(false)">保存并完成</button>
+            </div>
+        </div>
     </div>
 </div>
 

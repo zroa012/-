@@ -827,3 +827,68 @@ body.study-lock-sidebar .main {
     .function-row { flex-wrap:wrap; }
     .function-row input { flex-basis:100%; }
 }
+
+/* =========================
+   首页复习计划 + 错题本
+   ========================= */
+.home-review-item {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    background:#f8f9fc;
+    border:1px solid #eef0f4;
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:10px;
+}
+.home-review-item .item-title { margin-bottom:5px; font-size:15px; }
+.home-review-item .review-button { flex-shrink:0; }
+
+.wrong-item {
+    background:#fff;
+    border-left:4px solid #e85d5d;
+    border-radius:12px;
+    padding:18px;
+    margin-bottom:12px;
+    box-shadow:0 3px 12px rgba(30,50,80,.04);
+}
+.wrong-item-head {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:15px;
+    margin-bottom:12px;
+}
+.wrong-content {
+    background:#f8f9fb;
+    border-radius:8px;
+    padding:10px 12px;
+    margin-top:8px;
+    line-height:1.7;
+    white-space:pre-wrap;
+    word-break:break-word;
+}
+.wrong-modal-box { max-width:620px; }
+.wrong-modal-subtitle { color:#7b8494; line-height:1.7; margin:8px 0 18px; }
+.wrong-choice { display:flex; flex-direction:column; gap:4px; }
+.wrong-question-form { display:none; }
+.wrong-question-form textarea {
+    width:100%;
+    min-height:85px;
+    resize:vertical;
+    border:1px solid #dfe3e9;
+    border-radius:8px;
+    padding:12px;
+    outline:none;
+    font-family:inherit;
+    font-size:14px;
+    line-height:1.6;
+}
+.wrong-form-buttons { display:flex; gap:10px; margin-top:15px; }
+.wrong-form-buttons button { flex:1; }
+
+@media(max-width:600px) {
+    .home-review-item, .wrong-item-head { align-items:flex-start; }
+    .wrong-form-buttons { flex-direction:column; }
+}
