@@ -787,3 +787,43 @@ body.study-lock-sidebar .main {
         width: 100%;
     }
 }
+
+
+/* =========================
+   首页统计与学习趋势
+   ========================= */
+.panel-tip { color:#9ba3b1; font-size:12px; }
+.panel-subtitle { margin:7px 0 0; color:#9ba3b1; font-size:13px; }
+.home-bottom-grid { margin-top:20px; }
+.mini-stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.mini-stat-grid > div { background:#f7f9fc; border-radius:12px; padding:16px; }
+.mini-stat-grid strong { display:block; font-size:25px; margin-bottom:5px; }
+.mini-stat-grid span { color:#8c95a3; font-size:12px; }
+.trend-canvas { width:100%; height:300px; display:block; }
+.mini-trend { height:230px; }
+
+/* =========================
+   更多学习工具
+   ========================= */
+.tool-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.tool-card { background:#fff; border-radius:16px; padding:24px; box-shadow:0 3px 12px rgba(30,50,80,.04); }
+.tool-icon { font-size:34px; margin-bottom:8px; }
+.tool-card h2 { margin:0 0 8px; font-size:20px; }
+.tool-card p { color:#7b8494; line-height:1.7; font-size:13px; margin:0 0 16px; }
+.tool-card .primary,.tool-card .secondary { width:auto; margin-top:0; padding:10px 16px; }
+.function-tool { margin-top:15px; }
+.function-row { display:flex; align-items:center; gap:8px; }
+.function-row input { flex:1; min-width:0; padding:11px 12px; border:1px solid #dfe3e9; border-radius:8px; outline:none; font-size:14px; }
+.function-row button { margin-top:0 !important; }
+.function-canvas { display:block; width:100%; height:320px; margin-top:14px; border:1px solid #e8ebf0; border-radius:10px; background:#fff; }
+.tool-tip { margin-top:8px !important; font-size:11px !important; }
+
+@media(max-width:900px) {
+    .tool-grid { grid-template-columns:1fr; }
+    .mini-stat-grid { grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:600px) {
+    .mini-stat-grid { grid-template-columns:1fr 1fr; }
+    .function-row { flex-wrap:wrap; }
+    .function-row input { flex-basis:100%; }
+}

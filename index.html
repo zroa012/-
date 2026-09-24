@@ -27,12 +27,10 @@
         <div class="menu">
             <button onclick="showPage('home')">🏠 首页</button>
             <button onclick="showPage('knowledge')">📖 已学知识点</button>
-            <button onclick="showPage('plan')">📅 今日复习计划</button>
             <button onclick="showPage('study')">✏️ 开始学习</button>
-            <button onclick="showPage('review')">🔄 今日复习</button>
-            <button onclick="showPage('recent')">📊 近期学习情况</button>
+            <button onclick="showPage('recent')">📊 今日学习状况</button>
             <button onclick="showPage('weak')">⚠️ 薄弱知识点</button>
-            <button onclick="showPage('count')">📈 学习统计</button>
+            <button onclick="showPage('tools')">🧰 更多学习工具</button>
         </div>
 
         <div class="sidebar-bottom">
@@ -81,8 +79,8 @@
             <div class="home-grid">
                 <div class="panel">
                     <div class="panel-title">
-                        <h2>今日学习计划</h2>
-                        <button onclick="showPage('plan')">查看全部 →</button>
+                        <h2>今日复习</h2>
+                        <span class="panel-tip">需要复习的知识点</span>
                     </div>
                     <div id="homePlan"></div>
                 </div>
@@ -95,6 +93,28 @@
                     <div id="homeWeak"></div>
                 </div>
             </div>
+
+            <div class="home-grid home-bottom-grid">
+                <div class="panel">
+                    <div class="panel-title">
+                        <h2>学习统计</h2>
+                        <span class="panel-tip">累计学习情况</span>
+                    </div>
+                    <div class="mini-stat-grid">
+                        <div><strong id="homeStatKnowledge">0</strong><span>知识点</span></div>
+                        <div><strong id="homeStatRecords">0</strong><span>学习次数</span></div>
+                        <div><strong id="homeStatTime">0</strong><span>分钟</span></div>
+                        <div><strong id="homeStatProficiency">0%</strong><span>平均熟练度</span></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title">
+                        <h2>近 7 天学习趋势</h2>
+                        <button onclick="showPage('recent')">查看详情 →</button>
+                    </div>
+                    <canvas id="homeTrendCanvas" class="trend-canvas mini-trend"></canvas>
+                </div>
+            </div>
         </div>
 
         <div id="knowledge" class="page">
@@ -103,24 +123,6 @@
                 <button class="primary" onclick="showAdd()">＋ 添加知识点</button>
             </div>
             <div id="knowledgeList"></div>
-        </div>
-
-        <div id="plan" class="page">
-            <div class="page-title">
-                <h1>今日复习计划</h1>
-            </div>
-
-            <div class="today-box">
-                今天是 <strong id="planDate"></strong>
-            </div>
-
-            <div id="planList"></div>
-
-            <div class="total-time">
-                今日预计学习时间：
-                <strong id="planTime">0</strong>
-                分钟
-            </div>
         </div>
 
         <div id="study" class="page">
@@ -211,26 +213,25 @@
             </div>
         </div>
 
-        <div id="review" class="page">
-            <div class="page-title">
-                <h1>今日复习</h1>
-            </div>
-            <div id="reviewList"></div>
-        </div>
-
         <div id="recent" class="page">
             <div class="page-title">
-                <h1>近期学习情况</h1>
+                <h1>今日学习状况</h1>
+                <button class="primary" onclick="exportStudyImage()">导出学习情况图片</button>
             </div>
 
-            <div class="panel">
-                <h2>近 7 天学习情况</h2>
-                <div id="recentList"></div>
+            <div class="panel trend-panel">
+                <div class="panel-title">
+                    <div>
+                        <h2>近 7 天学习时间趋势</h2>
+                        <p class="panel-subtitle">根据学习记录自动生成折线图</p>
+                    </div>
+                </div>
+                <canvas id="studyTrendCanvas" class="trend-canvas"></canvas>
             </div>
 
             <div class="cards">
                 <div class="card blue">
-                    <p>学习时间</p>
+                    <p>近 7 天学习时间</p>
                     <strong id="recentTime">0</strong>
                     <span>分钟</span>
                 </div>
@@ -246,6 +247,17 @@
                     <strong id="recentAverage">0</strong>
                     <span>分钟</span>
                 </div>
+
+                <div class="card purple">
+                    <p>累计学习次数</p>
+                    <strong id="recentRecords">0</strong>
+                    <span>次</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>每日学习明细</h2>
+                <div id="recentList"></div>
             </div>
         </div>
 
@@ -256,39 +268,47 @@
             <div id="weakList"></div>
         </div>
 
-        <div id="count" class="page">
+        <div id="tools" class="page">
             <div class="page-title">
-                <h1>学习统计</h1>
+                <h1>更多学习工具</h1>
             </div>
 
-            <div class="cards">
-                <div class="card blue">
-                    <p>知识点总数</p>
-                    <strong id="countKnowledge">0</strong>
+            <div class="tool-grid">
+                <div class="tool-card">
+                    <div class="tool-icon">📐</div>
+                    <h2>几何画板</h2>
+                    <p>用于点、线、角、三角形、圆等几何图形的动态探索。</p>
+                    <button class="primary" onclick="openTool('https://www.geogebra.org/geometry')">打开几何画板</button>
                 </div>
 
-                <div class="card green">
-                    <p>平均熟练度</p>
-                    <strong id="countProficiency">0</strong>
-                    <span>%</span>
+                <div class="tool-card">
+                    <div class="tool-icon">📈</div>
+                    <h2>函数图像</h2>
+                    <p>输入函数表达式，直接在学习助手中绘制函数曲线。</p>
+                    <div class="function-tool">
+                        <div class="function-row">
+                            <span>y =</span>
+                            <input id="functionInput" value="sin(x)" placeholder="例如 x^2、sin(x)、2*x+1">
+                            <button class="primary" onclick="drawFunctionGraph()">绘制</button>
+                        </div>
+                        <canvas id="functionCanvas" class="function-canvas"></canvas>
+                        <p class="tool-tip">支持：x、+、-、*、/、^、sin、cos、tan、sqrt、abs、log。</p>
+                    </div>
                 </div>
 
-                <div class="card orange">
-                    <p>累计学习时间</p>
-                    <strong id="countTime">0</strong>
-                    <span>分钟</span>
+                <div class="tool-card">
+                    <div class="tool-icon">🧮</div>
+                    <h2>科学计算器</h2>
+                    <p>快速进行常见数学计算，适合做题时辅助验算。</p>
+                    <button class="secondary" onclick="openTool('https://www.desmos.com/scientific')">打开科学计算器</button>
                 </div>
 
-                <div class="card purple">
-                    <p>累计学习次数</p>
-                    <strong id="countRecord">0</strong>
-                    <span>次</span>
+                <div class="tool-card">
+                    <div class="tool-icon">📊</div>
+                    <h2>图形计算器</h2>
+                    <p>适合函数、方程、不等式和坐标图像的可视化探索。</p>
+                    <button class="secondary" onclick="openTool('https://www.desmos.com/calculator')">打开图形计算器</button>
                 </div>
-            </div>
-
-            <div class="panel">
-                <h2>知识点掌握情况</h2>
-                <div id="countDetail"></div>
             </div>
         </div>
 

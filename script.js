@@ -383,7 +383,6 @@ function dueNodes() {
 
 function refresh() {
     document.getElementById("homeDate")?.replaceChildren(document.createTextNode(formatDateChinese()));
-    document.getElementById("planDate")?.replaceChildren(document.createTextNode(formatDateChinese()));
 
     const totalMinutes = studyRecords.reduce((s,r) => s + Number(r.minutes || 0), 0);
     const avg = knowledge.length
@@ -400,20 +399,14 @@ function refresh() {
     setText("homeReview", due.length);
     setText("homeTime", totalMinutes);
     setText("homeProficiency", avg);
-    setText("countKnowledge", knowledge.length);
-    setText("countProficiency", avg);
-    setText("countTime", totalMinutes);
-    setText("countRecord", studyRecords.length);
 
     renderKnowledge();
-    renderPlan();
-    renderReview();
     renderRecent();
     renderWeak();
-    renderCount();
     renderDelete();
     renderHomePlan();
     renderHomeWeak();
+    renderHomeStats();
 }
 
 function renderKnowledge() {
@@ -439,67 +432,168 @@ function renderKnowledge() {
     `).join("");
 }
 
-function renderPlan() {
-    const el = document.getElementById("planList");
-    if (!el) return;
-
-    const list = dueNodes();
-    el.innerHTML = list.length ? list.map(n => `
-        <div class="plan-item">
-            <div>
-                <div class="item-title">${escapeHtml(n.name)}</div>
-                <div class="item-sub">${escapeHtml(n.subject)}</div>
-            </div>
-            <div class="plan-time">${n.time} 分钟</div>
-        </div>
-    `).join("") : '<div class="empty">今天暂时没有需要复习的知识点。</div>';
-
-    const total = list.reduce((s,n) => s + Number(n.time || 0), 0);
-    const elTime = document.getElementById("planTime");
-    if (elTime) elTime.textContent = total;
+function getLast7DaysData() {
+    const result = [];
+    const map = {};
+    studyRecords.forEach(r => {
+        map[r.date] = (map[r.date] || 0) + Number(r.minutes || 0);
+    });
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(0,0,0,0);
+        d.setDate(d.getDate() - i);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        result.push({ date:key, minutes:Number(map[key] || 0), label:`${d.getMonth()+1}/${d.getDate()}` });
+    }
+    return result;
 }
 
-function renderReview() {
-    const el = document.getElementById("reviewList");
-    if (!el) return;
-
-    const list = dueNodes();
-    el.innerHTML = list.length ? list.map(n => `
-        <div class="review-item">
-            <div class="item-title">${escapeHtml(n.name)}</div>
-            <div class="item-sub">${escapeHtml(n.subject)} · 熟练度 ${n.proficiency}%</div>
-            <button class="review-button" onclick="reviewNode('${String(n.id)}')">去学习</button>
-        </div>
-    `).join("") : '<div class="empty">今天没有需要复习的知识点。</div>';
+function drawLineChart(canvas, data, options = {}) {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(320, Math.floor(rect.width || 700));
+    const height = Math.max(220, Math.floor(options.height || 280));
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,width,height);
+    const pad = {left:48,right:20,top:24,bottom:40};
+    const plotW = width-pad.left-pad.right;
+    const plotH = height-pad.top-pad.bottom;
+    const maxVal = Math.max(10, Math.ceil(Math.max(...data.map(x=>x.minutes),0)/10)*10);
+    ctx.font = "12px Arial, Microsoft YaHei, sans-serif";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.strokeStyle = "#e8ebf0";
+    ctx.fillStyle = "#8c95a3";
+    for(let i=0;i<=4;i++){
+        const y=pad.top+plotH*i/4;
+        ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(width-pad.right,y); ctx.stroke();
+        ctx.fillText(String(Math.round(maxVal*(4-i)/4)),pad.left-8,y);
+    }
+    const points=data.map((item,i)=>({
+        x: pad.left + (data.length===1 ? plotW/2 : plotW*i/(data.length-1)),
+        y: pad.top + plotH*(1-item.minutes/maxVal)
+    }));
+    ctx.strokeStyle="#4f7cff";
+    ctx.lineWidth=3;
+    ctx.lineJoin="round";
+    ctx.lineCap="round";
+    ctx.beginPath();
+    points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    ctx.stroke();
+    points.forEach((p,i)=>{
+        ctx.fillStyle="#4f7cff";
+        ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="#606978"; ctx.textAlign="center"; ctx.textBaseline="top";
+        ctx.fillText(data[i].label,p.x,height-pad.bottom+12);
+    });
 }
 
 function renderRecent() {
+    const data = getLast7DaysData();
     const el = document.getElementById("recentList");
-    if (!el) return;
+    if (el) {
+        el.innerHTML = data.slice().reverse().map(x => `<div class="recent-row"><span>${x.date}</span><strong>${x.minutes} 分钟</strong></div>`).join("");
+    }
+    const time = data.reduce((s,x)=>s+x.minutes,0);
+    const days = data.filter(x=>x.minutes>0).length;
+    const setText=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+    setText("recentTime",time);
+    setText("recentDays",days);
+    setText("recentAverage",days?Math.round(time/days):0);
+    setText("recentRecords",studyRecords.length);
+    drawLineChart(document.getElementById("studyTrendCanvas"),data,{height:300});
+    drawLineChart(document.getElementById("homeTrendCanvas"),data,{height:230});
+}
 
-    const days = {};
-    studyRecords.forEach(r => {
-        days[r.date] = (days[r.date] || 0) + Number(r.minutes || 0);
-    });
+function renderHomeStats() {
+    const totalMinutes = studyRecords.reduce((s,r)=>s+Number(r.minutes||0),0);
+    const avg = knowledge.length ? Math.round(knowledge.reduce((s,n)=>s+Number(n.proficiency||0),0)/knowledge.length) : 0;
+    const setText=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+    setText("homeStatKnowledge",knowledge.length);
+    setText("homeStatRecords",studyRecords.length);
+    setText("homeStatTime",totalMinutes);
+    setText("homeStatProficiency",`${avg}%`);
+}
 
-    const entries = Object.entries(days).sort((a,b) => b[0].localeCompare(a[0])).slice(0,7);
+function openTool(url) {
+    window.open(url,"_blank","noopener,noreferrer");
+}
 
-    el.innerHTML = entries.length
-        ? entries.map(([date,minutes]) => `<div class="recent-row"><span>${date}</span><strong>${minutes} 分钟</strong></div>`).join("")
-        : '<div class="empty">还没有学习记录。</div>';
+function drawFunctionGraph() {
+    const canvas=document.getElementById("functionCanvas");
+    const input=document.getElementById("functionInput");
+    if(!canvas || !input) return;
+    const expr=input.value.trim().replace(/×/g,"*").replace(/π/g,"Math.PI");
+    if(!expr){showMessage("请输入函数表达式");return;}
+    let compiled;
+    try {
+        const safe=expr
+            .replace(/\^/g,"**")
+            .replace(/\bsin\b/gi,"Math.sin")
+            .replace(/\bcos\b/gi,"Math.cos")
+            .replace(/\btan\b/gi,"Math.tan")
+            .replace(/\bsqrt\b/gi,"Math.sqrt")
+            .replace(/\babs\b/gi,"Math.abs")
+            .replace(/\blog\b/gi,"Math.log10");
+        if(!/^[0-9xX+\-*/().,\sA-Za-z*_]+$/.test(safe)) throw new Error("非法字符");
+        compiled=new Function("x",`return (${safe});`);
+    } catch(e) { showMessage("函数表达式无法识别，请检查格式"); return; }
+    const rect=canvas.getBoundingClientRect();
+    const width=Math.max(320,Math.floor(rect.width||650));
+    const height=320;
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=width*dpr; canvas.height=height*dpr;
+    const ctx=canvas.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,width,height);
+    const xmin=-10,xmax=10,ymin=-10,ymax=10;
+    const X=x=> (x-xmin)/(xmax-xmin)*width;
+    const Y=y=> height-(y-ymin)/(ymax-ymin)*height;
+    ctx.strokeStyle="#e2e6ed"; ctx.lineWidth=1;
+    for(let v=-10;v<=10;v++){
+        const px=X(v), py=Y(v);
+        ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,height);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(width,py);ctx.stroke();
+    }
+    ctx.strokeStyle="#9aa3b2";ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(X(0),0);ctx.lineTo(X(0),height);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,Y(0));ctx.lineTo(width,Y(0));ctx.stroke();
+    ctx.strokeStyle="#4f7cff";ctx.lineWidth=2.5;ctx.beginPath();
+    let drawing=false;
+    for(let i=0;i<=width;i++){
+        const x=xmin+(xmax-xmin)*i/width;
+        let y; try{y=Number(compiled(x));}catch{y=NaN;}
+        if(!Number.isFinite(y) || Math.abs(y)>100){drawing=false;continue;}
+        const px=X(x),py=Y(y);
+        if(!drawing){ctx.moveTo(px,py);drawing=true;} else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+}
 
-    const recent = studyRecords.filter(r => {
-        const d = new Date(r.date + "T00:00:00");
-        const diff = (new Date() - d) / 86400000;
-        return diff >= 0 && diff < 7;
-    });
-
-    const time = recent.reduce((s,r) => s + Number(r.minutes || 0), 0);
-    const uniqueDays = new Set(recent.map(r => r.date)).size;
-
-    document.getElementById("recentTime") && (document.getElementById("recentTime").textContent = time);
-    document.getElementById("recentDays") && (document.getElementById("recentDays").textContent = uniqueDays);
-    document.getElementById("recentAverage") && (document.getElementById("recentAverage").textContent = uniqueDays ? Math.round(time/uniqueDays) : 0);
+function exportStudyImage() {
+    const data=getLast7DaysData();
+    const W=1100,H=720;
+    const canvas=document.createElement("canvas"); canvas.width=W; canvas.height=H;
+    const ctx=canvas.getContext("2d");
+    ctx.fillStyle="#f5f7fb";ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="#ffffff";ctx.fillRect(40,35,W-80,H-70);
+    ctx.fillStyle="#202938";ctx.font="bold 30px Arial, Microsoft YaHei, sans-serif";ctx.fillText("智能学习助手 · 学习情况",75,90);
+    ctx.fillStyle="#8c95a3";ctx.font="16px Arial, Microsoft YaHei, sans-serif";ctx.fillText(`生成日期：${formatDateChinese()}`,75,120);
+    const total=data.reduce((s,x)=>s+x.minutes,0), days=data.filter(x=>x.minutes>0).length;
+    ctx.fillStyle="#4f7cff";ctx.font="bold 24px Arial";ctx.fillText(String(total),75,180);ctx.fillStyle="#606978";ctx.font="14px Arial, Microsoft YaHei, sans-serif";ctx.fillText("近7天学习分钟",75,205);
+    ctx.fillStyle="#42c98b";ctx.font="bold 24px Arial";ctx.fillText(String(days),250,180);ctx.fillStyle="#606978";ctx.font="14px Arial, Microsoft YaHei, sans-serif";ctx.fillText("学习天数",250,205);
+    ctx.fillStyle="#9b72e8";ctx.font="bold 24px Arial";ctx.fillText(String(studyRecords.length),390,180);ctx.fillStyle="#606978";ctx.font="14px Arial, Microsoft YaHei, sans-serif";ctx.fillText("累计学习次数",390,205);
+    const left=75,top=250,cw=950,ch=350,maxVal=Math.max(10,Math.ceil(Math.max(...data.map(x=>x.minutes),0)/10)*10);
+    ctx.strokeStyle="#e8ebf0";ctx.lineWidth=1;ctx.font="12px Arial";ctx.fillStyle="#8c95a3";ctx.textAlign="right";
+    for(let i=0;i<=5;i++){const y=top+ch*i/5;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(left+cw,y);ctx.stroke();ctx.fillText(String(Math.round(maxVal*(5-i)/5)),left-10,y+4);}
+    const pts=data.map((d,i)=>({x:left+cw*i/6,y:top+ch*(1-d.minutes/maxVal)}));
+    ctx.strokeStyle="#4f7cff";ctx.lineWidth=4;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
+    pts.forEach((p,i)=>{ctx.fillStyle="#4f7cff";ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle="#606978";ctx.textAlign="center";ctx.font="13px Arial";ctx.fillText(data[i].label,p.x,top+ch+25);});
+    const a=document.createElement("a");a.download=`学习情况_${todayString()}.png`;a.href=canvas.toDataURL("image/png");a.click();
+    showMessage("学习情况图片已导出");
 }
 
 function renderWeak() {
@@ -518,18 +612,6 @@ function renderWeak() {
     if (home) home.innerHTML = list.slice(0,3).length
         ? list.slice(0,3).map(n => `<div class="recent-row"><span>${escapeHtml(n.name)}</span><strong>${n.proficiency}%</strong></div>`).join("")
         : '<div class="empty">目前没有薄弱知识点。</div>';
-}
-
-function renderCount() {
-    const el = document.getElementById("countDetail");
-    if (!el) return;
-
-    el.innerHTML = knowledge.length ? knowledge.map(n => `
-        <div class="stat-line">
-            <span>${escapeHtml(n.subject)} · ${escapeHtml(n.name)}</span>
-            <strong>${n.proficiency}%</strong>
-        </div>
-    `).join("") : '<div class="empty">暂无数据。</div>';
 }
 
 function renderDelete() {
@@ -907,4 +989,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initSidebar();
     updateStudyModeUI();
     initFirstUseIntro();
+    setTimeout(() => { drawFunctionGraph(); }, 0);
+    window.addEventListener("resize", () => { renderRecent(); drawFunctionGraph(); });
 });
