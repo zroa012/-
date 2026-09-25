@@ -926,3 +926,228 @@ body.study-lock-sidebar .main {
 .calculator-grid button:hover{background:#f0f4fb;}
 .calculator-grid .calculator-equals{grid-column:span 4;background:#4f7cff;color:#fff;border-color:#4f7cff;}
 @media(max-width:700px){.geometry-canvas{height:320px}.local-tool-panel{padding:10px}.geometry-toolbar{gap:6px}}
+
+/* =========================================================
+   清爽版界面：参考洛谷这类学习平台的「扁平、紧凑、内容优先」风格
+   ========================================================= */
+:root{
+    --ui-blue:#3b82f6;
+    --ui-blue-dark:#2563eb;
+    --ui-bg:#f3f5f7;
+    --ui-panel:#ffffff;
+    --ui-border:#e5e7eb;
+    --ui-text:#262b33;
+    --ui-muted:#7a8491;
+}
+
+body{
+    background:var(--ui-bg);
+    color:var(--ui-text);
+    font-size:14px;
+}
+
+.sidebar{
+    width:220px;
+    background:#fff;
+    border-right:1px solid #dfe3e8;
+    padding:18px 12px;
+    box-shadow:none;
+}
+
+.logo{
+    gap:10px;
+    padding:5px 9px 22px;
+    border-bottom:1px solid #eef0f2;
+    margin-bottom:12px;
+}
+.logo-icon{
+    width:36px;
+    height:36px;
+    border-radius:6px;
+    background:var(--ui-blue);
+    font-size:19px;
+    font-weight:700;
+    color:#fff;
+}
+.logo h2{font-size:16px;font-weight:600;}
+.logo p{font-size:10px;color:#9aa1aa;margin-top:2px;}
+
+.menu{gap:2px;}
+.menu button,
+.sidebar-bottom button{
+    padding:9px 11px;
+    border-radius:5px;
+    color:#59636f;
+    font-size:14px;
+    font-weight:400;
+}
+.menu button:hover,
+.sidebar-bottom button:hover{
+    background:#f1f5f9;
+    color:#2f6fd6;
+}
+.menu button.active{
+    background:#eaf2ff;
+    color:#2563eb;
+    font-weight:600;
+    box-shadow:none;
+}
+.sidebar-bottom{
+    border-top:1px solid #eef0f2;
+    padding-top:12px;
+    gap:5px;
+}
+.sidebar-bottom .add-button{
+    background:#3b82f6;
+    color:#fff;
+    border-radius:5px;
+}
+.sidebar-bottom .add-button:hover{background:#2563eb;color:#fff;}
+.sidebar-bottom .delete-button{color:#6b7280;}
+
+.main{
+    margin-left:220px;
+    width:calc(100% - 220px);
+    padding:28px 34px 45px;
+}
+
+.page{max-width:1180px;margin:0 auto;}
+.top{margin-bottom:22px;}
+.hello{color:#7a8491;font-size:13px;margin:0 0 5px;}
+.top h1{font-size:25px;font-weight:600;letter-spacing:-.2px;margin:0;}
+.date{font-size:12px;color:#9aa1aa;margin-top:7px;}
+
+/* 顶部统计改成低干扰的白色信息块 */
+.cards{
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:18px;
+}
+.card{
+    background:#fff !important;
+    border:1px solid var(--ui-border);
+    border-radius:7px;
+    box-shadow:none;
+    padding:16px 18px;
+    min-height:92px;
+}
+.card p{font-size:12px;color:#7b8490;margin:0 0 8px;}
+.card strong{font-size:25px;color:#252a31;font-weight:600;}
+.card span{color:#9aa1aa;font-size:12px;}
+.card.blue,.card.green,.card.orange,.card.purple{border-top:2px solid var(--ui-blue);}
+.card.green,.card.orange,.card.purple{border-top-color:#d7dde5;}
+
+/* 所有主要内容块统一成白底+细边框 */
+.home-grid{gap:14px;}
+.panel,
+.section,
+.knowledge-item,
+.tool-card,
+.wrong-item,
+.local-tool-panel{
+    background:#fff;
+    border:1px solid var(--ui-border);
+    border-radius:7px;
+    box-shadow:none;
+}
+
+.panel{padding:18px;}
+.panel h2,.page-title h1{font-weight:600;}
+.panel-subtitle,.panel-tip{color:#8a939e;}
+
+.page-title{
+    margin-bottom:18px;
+    padding-bottom:12px;
+    border-bottom:1px solid #e5e7eb;
+}
+.page-title h1{font-size:22px;margin:0;}
+.page-title p{font-size:13px;color:#89919b;margin:6px 0 0;}
+
+.primary,
+button.primary{
+    background:var(--ui-blue);
+    border-radius:5px;
+    box-shadow:none;
+}
+.primary:hover{background:var(--ui-blue-dark);}
+.secondary{
+    border-radius:5px;
+    box-shadow:none;
+}
+
+/* 列表更像题库/学习平台，而不是营销卡片 */
+.knowledge-item{
+    border-radius:6px;
+    padding:14px 16px;
+    margin-bottom:9px;
+}
+.knowledge-item:hover{border-color:#cfd8e3;box-shadow:none;}
+.home-review-item{
+    background:#fff;
+    border:0;
+    border-bottom:1px solid #edf0f2;
+    border-radius:0;
+    padding:12px 2px;
+    margin-bottom:0;
+}
+.home-review-item:last-child{border-bottom:0;}
+.wrong-item{
+    border-left:3px solid #e85d5d;
+    border-radius:6px;
+    padding:15px;
+    margin-bottom:10px;
+}
+
+/* 工具区改为紧凑的学习工具列表 */
+.tool-grid{gap:14px;}
+.tool-card{border-radius:7px;padding:18px;}
+.tool-icon{font-size:22px;margin-bottom:6px;}
+.tool-card h2{font-size:17px;font-weight:600;}
+.tool-card p{line-height:1.6;color:#7d8793;font-size:13px;}
+.local-tool-panel{padding:14px;border-radius:6px;background:#fafbfc;}
+.tool-choice{border-radius:5px;padding:7px 11px;}
+.tool-choice.active{background:var(--ui-blue);border-color:var(--ui-blue);}
+
+.function-canvas,
+.geometry-canvas,
+.function-zoom-canvas{
+    border-radius:6px;
+    border-color:#dfe3e8;
+}
+.function-canvas-hint{border-radius:5px;box-shadow:none;}
+
+/* 输入框统一简洁样式 */
+input,select,textarea,
+.function-row input,
+.calculator-display,
+.wrong-question-form textarea{
+    border-color:#d8dde4;
+    border-radius:5px;
+    box-shadow:none;
+}
+input:focus,select:focus,textarea:focus,
+.function-row input:focus,
+.calculator-display:focus{
+    border-color:#6ea3f7;
+    box-shadow:0 0 0 2px rgba(59,130,246,.10);
+}
+
+/* 弹窗不要过度圆润 */
+.modal-box,
+.function-zoom-card{
+    border-radius:8px;
+    box-shadow:0 10px 35px rgba(20,30,45,.14);
+}
+
+.sidebar-toggle{
+    border-radius:5px;
+    box-shadow:none;
+}
+
+@media(max-width:900px){
+    .main{padding:22px 18px 35px;}
+}
+@media(max-width:700px){
+    .sidebar{width:210px;}
+    .main{margin-left:210px;width:calc(100% - 210px);}
+}
