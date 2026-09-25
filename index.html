@@ -346,43 +346,9 @@
                 </div>
 
                 <div class="tool-card">
-                    <h2>科学实验室</h2>
-                    <p>本地科学小实验，输入参数即可进行自由落体、欧姆定律和密度计算。</p>
-                    <button class="secondary" type="button" onclick="toggleLocalTool('scienceLabPanel', this)">打开科学实验室</button>
-                    <div id="scienceLabPanel" class="local-tool-panel science-lab-panel" style="display:none;">
-                        <div class="lab-tabs">
-                            <button type="button" class="lab-tab active" data-lab="freefall">自由落体</button>
-                            <button type="button" class="lab-tab" data-lab="ohm">欧姆定律</button>
-                            <button type="button" class="lab-tab" data-lab="density">密度实验</button>
-                        </div>
-                        <div id="labFreefall" class="lab-experiment">
-                            <p class="lab-desc">输入高度 h 和重力加速度 g，计算下落时间与落地速度。</p>
-                            <div class="lab-form-grid">
-                                <label>高度 h（m）<input id="labHeight" type="number" value="20" min="0" step="0.1"></label>
-                                <label>重力加速度 g（m/s²）<input id="labGravity" type="number" value="9.8" min="0.01" step="0.1"></label>
-                            </div>
-                            <button class="primary lab-calc-btn" type="button" onclick="runScienceLab('freefall')">开始计算</button>
-                            <div id="labFreefallResult" class="lab-result">等待实验数据</div>
-                        </div>
-                        <div id="labOhm" class="lab-experiment" style="display:none;">
-                            <p class="lab-desc">输入电压 U 和电流 I，计算电阻 R 与功率 P。</p>
-                            <div class="lab-form-grid">
-                                <label>电压 U（V）<input id="labVoltage" type="number" value="12" min="0" step="0.1"></label>
-                                <label>电流 I（A）<input id="labCurrent" type="number" value="2" min="0.01" step="0.1"></label>
-                            </div>
-                            <button class="primary lab-calc-btn" type="button" onclick="runScienceLab('ohm')">开始计算</button>
-                            <div id="labOhmResult" class="lab-result">等待实验数据</div>
-                        </div>
-                        <div id="labDensity" class="lab-experiment" style="display:none;">
-                            <p class="lab-desc">输入物体质量 m 和体积 V，计算密度 ρ。</p>
-                            <div class="lab-form-grid">
-                                <label>质量 m（g）<input id="labMass" type="number" value="100" min="0" step="0.1"></label>
-                                <label>体积 V（cm³）<input id="labVolume" type="number" value="20" min="0.01" step="0.1"></label>
-                            </div>
-                            <button class="primary lab-calc-btn" type="button" onclick="runScienceLab('density')">开始计算</button>
-                            <div id="labDensityResult" class="lab-result">等待实验数据</div>
-                        </div>
-                    </div>
+                    <h2>在线实验室</h2>
+                    <p>打开在线实验室，进行物理等科学实验模拟与探究。</p>
+                    <a class="secondary tool-link-button" href="https://wl.nobook.com/console/templates/resource?grade_id=2" target="_blank" rel="noopener noreferrer">打开在线实验室</a>
                 </div>
             </div>
         </div>

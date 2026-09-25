@@ -1308,13 +1308,11 @@ function toggleLocalTool(id, button) {
         const labels = {
             geometryPanel: ["打开几何画板", "收起几何画板"],
             calculatorPanel: ["打开计算器", "收起计算器"],
-            scienceLabPanel: ["打开科学实验室", "收起科学实验室"]
         };
         const pair = labels[id] || ["打开工具", "收起工具"];
         button.textContent = opening ? pair[1] : pair[0];
     }
     if (opening && id === "geometryPanel") setTimeout(initGeometryBoard, 0);
-    if (opening && id === "scienceLabPanel") setTimeout(initScienceLab, 0);
 }
 
 let geometryState = { tool: "select", points: [], objects: [], initialized: false };
@@ -1446,47 +1444,3 @@ function initCalculator(){
 }
 
 window.addEventListener("resize",()=>{if(geometryState.initialized)drawGeometryBoard();});
-
-
-/* =========================
-   本地科学实验室
-   ========================= */
-function initScienceLab(){
-    const panel=document.getElementById("scienceLabPanel");
-    if(!panel || panel.dataset.init) return;
-    panel.dataset.init="true";
-    panel.querySelectorAll("[data-lab]").forEach(btn=>{
-        btn.addEventListener("click",()=>{
-            const name=btn.dataset.lab;
-            panel.querySelectorAll("[data-lab]").forEach(b=>b.classList.toggle("active",b===btn));
-            ["freefall","ohm","density"].forEach(key=>{
-                const box=document.getElementById("lab"+key.charAt(0).toUpperCase()+key.slice(1));
-                if(box) box.style.display=key===name?"block":"none";
-            });
-        });
-    });
-}
-
-function runScienceLab(type){
-    const n=id=>Number(document.getElementById(id)?.value);
-    const fmt=x=>Number.isFinite(x)?x.toFixed(3).replace(/\.?0+$/,''):"—";
-    if(type==="freefall") {
-        const h=n("labHeight"), g=n("labGravity");
-        const out=document.getElementById("labFreefallResult");
-        if(!(h>=0&&g>0)){out.textContent="请输入有效的高度和重力加速度。";return;}
-        const t=Math.sqrt(2*h/g), v=g*t;
-        out.innerHTML=`下落时间 <strong>${fmt(t)} s</strong>　落地速度 <strong>${fmt(v)} m/s</strong>`;
-    } else if(type==="ohm") {
-        const u=n("labVoltage"), i=n("labCurrent");
-        const out=document.getElementById("labOhmResult");
-        if(!(u>=0&&i>0)){out.textContent="请输入有效的电压和电流。";return;}
-        const r=u/i, p=u*i;
-        out.innerHTML=`电阻 <strong>${fmt(r)} Ω</strong>　功率 <strong>${fmt(p)} W</strong>`;
-    } else if(type==="density") {
-        const m=n("labMass"), v=n("labVolume");
-        const out=document.getElementById("labDensityResult");
-        if(!(m>=0&&v>0)){out.textContent="请输入有效的质量和体积。";return;}
-        const rho=m/v;
-        out.innerHTML=`密度 <strong>${fmt(rho)} g/cm³</strong>`;
-    }
-}
