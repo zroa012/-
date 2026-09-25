@@ -1151,3 +1151,31 @@ input:focus,select:focus,textarea:focus,
     .sidebar{width:210px;}
     .main{margin-left:210px;width:calc(100% - 210px);}
 }
+
+
+/* ===== 最终清爽版：去掉顶部强调色，恢复更宽的内容区 ===== */
+.main{
+    margin-left:245px;
+    width:calc(100% - 245px);
+    padding:35px 45px;
+}
+.page{max-width:none;margin:0;}
+.card.blue,.card.green,.card.orange,.card.purple{border-top:1px solid var(--ui-border);}
+.card.green,.card.orange,.card.purple{border-top-color:var(--ui-border);}
+.tool-icon{display:none !important;}
+.tool-card{border-radius:6px;padding:20px;}
+.panel,.section,.knowledge-item,.tool-card,.wrong-item,.local-tool-panel{border-radius:6px;}
+
+/* 科学实验室 */
+.science-lab-panel{background:#fafbfc;}
+.lab-tabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+.lab-tab{width:auto!important;margin:0!important;padding:7px 11px;border:1px solid #d8dde4;border-radius:5px;background:#fff;color:#59636f;cursor:pointer;font-size:13px;}
+.lab-tab.active{background:#eef4ff;border-color:#9dbcf0;color:#2563eb;font-weight:600;}
+.lab-desc{margin:0 0 13px!important;color:#6f7885!important;font-size:12px!important;}
+.lab-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.lab-form-grid label{font-size:12px;color:#5d6672;}
+.lab-form-grid input{display:block;width:100%;margin-top:6px;padding:9px 10px;}
+.lab-calc-btn{width:auto!important;margin-top:12px!important;padding:8px 14px!important;}
+.lab-result{margin-top:12px;padding:11px 12px;border:1px solid #e2e6eb;background:#fff;color:#303844;font-size:13px;line-height:1.7;border-radius:5px;min-height:42px;}
+@media(max-width:900px){.main{padding:28px 22px 40px;}.lab-form-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.main{margin-left:210px;width:calc(100% - 210px);padding:22px 18px 35px;}.lab-form-grid{grid-template-columns:1fr;}}
