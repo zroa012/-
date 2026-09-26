@@ -1535,10 +1535,53 @@ const DAILY_QUOTES = [
 
 const CODE_TEMPLATES = {
     blank: "",
-    basic: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    return 0;\n}\n`,
-    input: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n\n    return 0;\n}\n`,
-    search: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, target;\n    cin >> n >> target;\n    vector<int> a(n);\n    for (int &x : a) cin >> x;\n\n    int l = 0, r = n - 1;\n    while (l <= r) {\n        int mid = (l + r) / 2;\n        if (a[mid] == target) {\n            cout << mid << '\\n';\n            return 0;\n        }\n        if (a[mid] < target) l = mid + 1;\n        else r = mid - 1;\n    }\n    cout << -1 << '\\n';\n    return 0;\n}\n`,
-    dp: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n + 1), dp(n + 1);\n    for (int i = 1; i <= n; ++i) cin >> a[i];\n\n    // 在这里补充状态定义、转移和初始化。\n\n    return 0;\n}\n`
+    search: `#include<bits/stdc++.h>
+using namespace std;
+int a[10000005];
+int main()
+{
+\tint n,m,q;
+\t//lower_bound upper_bound
+\tcin>>n>>m;
+\tfor(int i=1;i<=n;i++)
+\t{
+\t\tcin>>a[i];
+\t}
+\twhile(m--)
+\t{
+\t\tcin>>q;
+\t\tint ans=-1,l=1,r=n;
+\t\twhile(l<=r)
+\t\t{
+\t\t\tint mid=(l+r)/2;
+\t\t\tif(q<=a[mid])
+\t\t\t{
+\t\t\t\tif(q==a[mid]) ans=mid;
+\t\t\t\tr=mid-1;
+\t\t\t}
+\t\t\telse l=mid+1;\t
+\t\t}
+\t\tcout<<ans<<" ";
+\t}
+}` ,
+    dp: `#include<bits/stdc++.h>
+using namespace std;
+int w[105],val[105];
+int dp[1005];
+int main()
+{
+    int t,m;
+    cin>>t>>m;
+    for(int i=1;i<=m;i++) cin>>w[i]>>val[i];
+    for(int i=1;i<=m;i++)
+    {
+        for(int j=t;j>=w[i];j--)
+        {
+            dp[j]=max(dp[j],dp[j-w[i]]+val[i]);
+        }
+    }
+    cout<<dp[t];
+}`
 };
 
 function getWrongCauseLabel(cause) {
@@ -1818,6 +1861,9 @@ function loadCodeTemplate(){
 function copyCodeDraft(){
     const editor=document.getElementById("codeEditor");if(!editor)return;
     navigator.clipboard?.writeText(editor.value).then(()=>showMessage("代码已复制"),()=>showMessage("复制失败，请手动复制"));
+}
+function openOnlineCompiler(){
+    window.open("https://www.onlinegdb.com/online_c++_compiler", "_blank", "noopener,noreferrer");
 }
 function clearCodeDraft(){
     const editor=document.getElementById("codeEditor");if(!editor)return;
