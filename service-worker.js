@@ -1,9 +1,9 @@
-const CACHE_NAME = 'smart-study-v8';
+const CACHE_NAME = 'smart-study-v9';
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css",
-  "./script.js",
+  "./style.css?v=20260926",
+  "./script.js?v=20260926",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
@@ -18,7 +18,7 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(key => key !== CACHE_NAME && key.startsWith("smart-study-pwa-")).map(key => caches.delete(key))
+      keys.filter(key => key !== CACHE_NAME && key.startsWith("smart-study-")).map(key => caches.delete(key))
     )).then(() => self.clients.claim())
   );
 });

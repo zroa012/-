@@ -1858,12 +1858,24 @@ function loadCodeTemplate(){
     localStorage.setItem("codeDraft",editor.value);
     showMessage("代码模板已载入");
 }
-function copyCodeDraft(){
-    const editor=document.getElementById("codeEditor");if(!editor)return;
-    navigator.clipboard?.writeText(editor.value).then(()=>showMessage("代码已复制"),()=>showMessage("复制失败，请手动复制"));
-}
-function openOnlineCompiler(){
-    window.open("https://www.onlinegdb.com/online_c++_compiler", "_blank", "noopener,noreferrer");
+async function copyCodeDraft(){
+    const editor=document.getElementById("codeEditor");
+    if(!editor)return;
+    const text=editor.value;
+    try{
+        if(navigator.clipboard && window.isSecureContext){
+            await navigator.clipboard.writeText(text);
+            showMessage("代码已复制");
+            return;
+        }
+        editor.focus();
+        editor.select();
+        const ok=document.execCommand("copy");
+        editor.setSelectionRange(editor.value.length,editor.value.length);
+        showMessage(ok?"代码已复制":"复制失败，请手动复制");
+    }catch(e){
+        showMessage("复制失败，请手动复制");
+    }
 }
 function clearCodeDraft(){
     const editor=document.getElementById("codeEditor");if(!editor)return;
