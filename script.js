@@ -970,101 +970,153 @@ function initFirstUseIntro() {
             display:flex;
             align-items:center;
             justify-content:center;
-            padding:20px;
-            background:linear-gradient(135deg,#eef4ff,#f8fbff,#eef8f4);
-            transition:opacity .3s
+            padding:24px;
+            background:#f5f6f8;
+            transition:opacity .25s ease;
         }
         #firstUseIntro.hide{
             opacity:0;
-            pointer-events:none
+            pointer-events:none;
         }
         .first-use-card{
-            width:min(760px,100%);
+            width:min(820px,100%);
             max-height:90vh;
             overflow:auto;
+            box-sizing:border-box;
             background:#fff;
-            border-radius:26px;
-            padding:40px;
-            box-shadow:0 25px 70px rgba(0,0,0,.13);
-            text-align:center
+            border:1px solid #dfe3e8;
+            border-radius:8px;
+            padding:36px 40px 32px;
+            box-shadow:0 8px 28px rgba(0,0,0,.07);
         }
-        .first-use-icon{
-            font-size:42px;
-            margin-bottom:10px
+        .first-use-kicker{
+            color:#4f7cff;
+            font-size:13px;
+            margin-bottom:8px;
         }
         .first-use-card h1{
             margin:0;
             color:#202938;
-            font-size:32px
+            font-size:30px;
+            line-height:1.3;
         }
         .first-use-subtitle{
-            color:#7b8494;
-            line-height:1.7
+            margin:10px 0 0;
+            color:#697386;
+            line-height:1.8;
+            font-size:14px;
+        }
+        .first-use-section-title{
+            margin:26px 0 12px;
+            font-size:16px;
+            color:#202938;
         }
         .first-use-features{
             display:grid;
             grid-template-columns:1fr 1fr;
-            gap:12px;
-            text-align:left;
-            margin:25px 0
+            gap:10px;
         }
         .first-use-feature{
-            display:flex;
-            gap:12px;
-            padding:14px;
-            border-radius:14px;
-            background:#f7f9fc
-        }
-        .feature-icon{
-            font-size:22px
+            padding:16px 18px;
+            border:1px solid #e1e5ea;
+            border-radius:6px;
+            background:#fff;
         }
         .first-use-feature strong{
             display:block;
-            margin-bottom:3px
+            margin-bottom:6px;
+            color:#202938;
+            font-size:15px;
         }
         .first-use-feature span{
+            display:block;
+            color:#788293;
             font-size:12px;
-            color:#7b8494
+            line-height:1.7;
         }
         .first-use-flow{
-            padding:16px;
-            background:#f7f9fc;
-            border-radius:14px
+            margin-top:18px;
+            padding:16px 18px;
+            border:1px solid #e1e5ea;
+            border-radius:6px;
+            background:#fafbfc;
         }
         .flow-title{
-            font-weight:bold;
-            margin-bottom:10px
+            margin-bottom:12px;
+            color:#202938;
+            font-weight:600;
+            font-size:14px;
         }
         .flow-list{
-            display:flex;
-            justify-content:center;
-            gap:7px;
-            flex-wrap:wrap;
-            font-size:12px
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:8px;
         }
-        .flow-list span{
-            padding:7px;
+        .flow-step{
+            min-height:68px;
+            padding:12px;
+            box-sizing:border-box;
             background:#fff;
-            border-radius:7px
+            border:1px solid #e1e5ea;
+            border-radius:5px;
+        }
+        .flow-step b{
+            display:block;
+            color:#4f7cff;
+            font-size:12px;
+            margin-bottom:6px;
+        }
+        .flow-step span{
+            color:#4b5565;
+            font-size:13px;
+            line-height:1.5;
+        }
+        .first-use-tools{
+            margin-top:12px;
+            color:#788293;
+            font-size:12px;
+            line-height:1.8;
+        }
+        .first-use-footer{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:20px;
+            margin-top:26px;
+            padding-top:18px;
+            border-top:1px solid #eceff2;
         }
         .first-use-note{
+            margin:0;
+            color:#9aa2ae;
             font-size:12px;
-            color:#9ba3b1;
-            line-height:1.7
+            line-height:1.6;
         }
         #startUsingButton{
-            width:220px;
-            height:48px;
-            border:0;
-            border-radius:12px;
+            flex:0 0 auto;
+            min-width:150px;
+            height:42px;
+            padding:0 22px;
+            border:1px solid #4f7cff;
+            border-radius:5px;
             background:#4f7cff;
             color:#fff;
-            font-size:16px;
-            font-weight:bold
+            font-size:14px;
+            cursor:pointer;
+        }
+        #startUsingButton:hover{
+            background:#416ee8;
+            border-color:#416ee8;
         }
         @media(max-width:650px){
-            .first-use-card{padding:28px 20px}
-            .first-use-features{grid-template-columns:1fr}
+            .first-use-card{padding:28px 20px 24px;}
+            .first-use-features{grid-template-columns:1fr;}
+            .flow-list{grid-template-columns:1fr 1fr;}
+            .first-use-footer{align-items:stretch;flex-direction:column;}
+            #startUsingButton{width:100%;}
+        }
+        @media(max-width:430px){
+            .flow-list{grid-template-columns:1fr;}
         }
     `;
     document.head.appendChild(style);
@@ -1074,65 +1126,65 @@ function initFirstUseIntro() {
 
     wrap.innerHTML = `
         <div class="first-use-card">
-            <div class="first-use-icon">📚</div>
+            <div class="first-use-kicker">SMART STUDY</div>
             <h1>欢迎使用智能学习助手</h1>
             <p class="first-use-subtitle">
-                用更清晰的方式记录知识点、安排复习计划，
-                帮助你形成自己的学习节奏。
+                这里用于记录你的学习内容、学习时间和复习情况。
+                第一次使用时，按照下面的流程完成一次学习即可。
             </p>
 
+            <div class="first-use-section-title">你可以使用这些功能</div>
             <div class="first-use-features">
                 <div class="first-use-feature">
-                    <div class="feature-icon">📖</div>
-                    <div>
-                        <strong>知识点管理</strong>
-                        <span>记录并管理已经学习的知识点。</span>
-                    </div>
+                    <strong>知识点管理</strong>
+                    <span>在侧边栏添加、查看和删除知识点，建立自己的学习内容。</span>
                 </div>
-
                 <div class="first-use-feature">
-                    <div class="feature-icon">⏱️</div>
-                    <div>
-                        <strong>专注学习</strong>
-                        <span>使用学习倒计时进行一次完整学习。</span>
-                    </div>
+                    <strong>开始学习</strong>
+                    <span>选择知识点并开始计时，记录实际投入的学习时间。</span>
                 </div>
-
                 <div class="first-use-feature">
-                    <div class="feature-icon">🔄</div>
-                    <div>
-                        <strong>智能复习</strong>
-                        <span>根据学习结果安排后续复习。</span>
-                    </div>
+                    <strong>复习与学习状况</strong>
+                    <span>首页查看今日复习、学习统计和近期学习趋势。</span>
                 </div>
-
                 <div class="first-use-feature">
-                    <div class="feature-icon">📊</div>
-                    <div>
-                        <strong>学习统计</strong>
-                        <span>查看学习时间、次数和知识点掌握情况。</span>
-                    </div>
+                    <strong>错题与薄弱知识点</strong>
+                    <span>记录错题，查看需要重点巩固的知识点，方便后续复习。</span>
                 </div>
             </div>
 
+            <div class="first-use-section-title">推荐使用流程</div>
             <div class="first-use-flow">
-                <div class="flow-title">推荐使用流程</div>
+                <div class="flow-title">完成一次学习</div>
                 <div class="flow-list">
-                    <span>① 添加知识点</span>
-                    <span>→</span>
-                    <span>② 开始学习</span>
-                    <span>→</span>
-                    <span>③ 完成评价</span>
-                    <span>→</span>
-                    <span>④ 按计划复习</span>
+                    <div class="flow-step">
+                        <b>01</b>
+                        <span>添加知识点</span>
+                    </div>
+                    <div class="flow-step">
+                        <b>02</b>
+                        <span>进入开始学习并选择知识点</span>
+                    </div>
+                    <div class="flow-step">
+                        <b>03</b>
+                        <span>学习结束后完成评价</span>
+                    </div>
+                    <div class="flow-step">
+                        <b>04</b>
+                        <span>回到首页查看复习安排和学习情况</span>
+                    </div>
+                </div>
+                <div class="first-use-tools">
+                    更多学习工具中还提供函数图像、几何画板、科学计算器和在线实验室。
                 </div>
             </div>
 
-            <p class="first-use-note">
-                首次使用后，本介绍页不会再次自动显示。
-            </p>
-
-            <button id="startUsingButton">开始使用</button>
+            <div class="first-use-footer">
+                <p class="first-use-note">
+                    本介绍页只会在第一次使用时显示。之后可以直接进入首页。
+                </p>
+                <button id="startUsingButton">开始使用</button>
+            </div>
         </div>
     `;
 
@@ -1143,7 +1195,7 @@ function initFirstUseIntro() {
         btn.onclick = () => {
             localStorage.setItem("hasSeenIntro", "true");
             wrap.classList.add("hide");
-            setTimeout(() => wrap.remove(), 300);
+            setTimeout(() => wrap.remove(), 250);
         };
     }
 }
