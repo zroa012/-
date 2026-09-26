@@ -453,7 +453,8 @@ int main() {
                     </div>
                     <button class="function-zoom-close" type="button" onclick="closeFunctionZoom()">×</button>
                 </div>
-                <canvas id="functionZoomCanvas" class="function-zoom-canvas"></canvas>
+                <canvas id="functionZoomCanvas" class="function-zoom-canvas" title="按住图像拖动，可查看当前刻度范围之外的区域"></canvas>
+                <div class="function-zoom-drag-hint">按住图像拖动，可以上下或左右移动坐标系；放大后仍可继续拖动查看超出当前刻度的函数。</div>
                 <div class="function-zoom-actions">
                     <button class="secondary" type="button" onclick="zoomFunctionGraph(0.8)">缩小</button>
                     <button class="secondary" type="button" onclick="zoomFunctionGraph(1.25)">放大</button>

@@ -538,10 +538,14 @@ function openFunctionZoom() {
     if (source.dataset.drawn !== "true") { drawFunctionGraph(); }
     if (source.dataset.drawn !== "true") return;
     if (expr) expr.textContent = `y = ${source.dataset.expression || ""}`;
+
     functionZoomScale = 1;
-    renderFunctionZoom();
+    functionZoomCenterX = 0;
+    functionZoomCenterY = 0;
     modal.classList.add("show");
     document.body.style.overflow = "hidden";
+    // 先显示弹窗，再读取画布尺寸，避免弹窗 display:none 时尺寸为 0。
+    requestAnimationFrame(() => renderFunctionZoom());
 }
 
 function closeFunctionZoom(event) {
@@ -552,53 +556,31 @@ function closeFunctionZoom(event) {
 }
 
 let functionZoomScale = 1;
+let functionZoomCenterX = 0;
+let functionZoomCenterY = 0;
+let functionZoomDragging = false;
+let functionZoomDragLastX = 0;
+let functionZoomDragLastY = 0;
 
 function zoomFunctionGraph(factor) {
-    functionZoomScale = Math.max(0.6, Math.min(2.5, functionZoomScale * factor));
+    functionZoomScale = Math.max(0.45, Math.min(4, functionZoomScale * factor));
     renderFunctionZoom();
 }
 
 function resetFunctionZoom() {
     functionZoomScale = 1;
+    functionZoomCenterX = 0;
+    functionZoomCenterY = 0;
     renderFunctionZoom();
 }
 
-function renderFunctionZoom() {
-    const source = document.getElementById("functionCanvas");
-    const target = document.getElementById("functionZoomCanvas");
-    if (!source || !target || source.dataset.drawn !== "true") return;
-    const rect = target.getBoundingClientRect();
-    const width = Math.max(520, Math.floor(rect.width || 900));
-    const height = Math.max(360, Math.floor(rect.height || 600));
-    const dpr = window.devicePixelRatio || 1;
-    target.width = width * dpr;
-    target.height = height * dpr;
-    const ctx = target.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0,0,width,height);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0,0,width,height);
-    const scale = functionZoomScale;
-    const sw = source.width / dpr;
-    const sh = source.height / dpr;
-    const dw = sw * scale;
-    const dh = sh * scale;
-    const dx = (width - dw) / 2;
-    const dy = (height - dh) / 2;
-    ctx.drawImage(source, dx, dy, dw, dh);
-}
-
-function drawFunctionGraph() {
-    const canvas = document.getElementById("functionCanvas");
-    const input = document.getElementById("functionInput");
-    if (!canvas || !input) return;
-
-    const expr = input.value.trim().replace(/×/g, "*").replace(/π/g, "Math.PI");
-    if (!expr) { showMessage("请输入函数表达式"); return; }
-
-    let compiled;
+function getFunctionCompiled(expr) {
     try {
-        const safe = expr
+        const normalized = String(expr || "")
+            .trim()
+            .replace(/×/g, "*")
+            .replace(/π/g, "Math.PI");
+        const safe = normalized
             .replace(/\^/g, "**")
             .replace(/\bsin\b/gi, "Math.sin")
             .replace(/\bcos\b/gi, "Math.cos")
@@ -606,81 +588,100 @@ function drawFunctionGraph() {
             .replace(/\bsqrt\b/gi, "Math.sqrt")
             .replace(/\babs\b/gi, "Math.abs")
             .replace(/\blog\b/gi, "Math.log10");
-        if (!/^[0-9xX+\-*/().,\sA-Za-z*_]+$/.test(safe)) throw new Error("非法字符");
-        compiled = new Function("x", `return (${safe});`);
+        if (!/^[0-9xX+\-*/().,\sA-Za-z*_]+$/.test(safe)) return null;
+        return new Function("x", `return (${safe});`);
     } catch (e) {
-        showMessage("函数表达式无法识别，请检查格式");
-        return;
+        return null;
     }
+}
 
-    const rect = canvas.getBoundingClientRect();
-    const width = Math.max(420, Math.floor(rect.width || 650));
-    const height = 380;
+function renderFunctionZoom() {
+    const source = document.getElementById("functionCanvas");
+    const target = document.getElementById("functionZoomCanvas");
+    if (!source || !target || source.dataset.drawn !== "true") return;
+
+    const rect = target.getBoundingClientRect();
+    const width = Math.max(520, Math.floor(rect.width || 900));
+    const height = Math.max(360, Math.floor(rect.height || 600));
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    target.width = width * dpr;
+    target.height = height * dpr;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = target.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, width, height);
 
-    // 坐标范围：-10 到 10，每 1 个单位一个刻度。
-    const xmin = -10, xmax = 10, ymin = -10, ymax = 10;
-    const padLeft = 48, padRight = 18, padTop = 18, padBottom = 36;
+    // 放大查看采用“可拖动画布”而不是简单放大一张已经裁切好的图片。
+    // 这样 y=x^2+15 这类超出原 -10~10 范围的函数，也可以拖动看到。
+    const padLeft = 52, padRight = 18, padTop = 18, padBottom = 38;
     const plotW = width - padLeft - padRight;
     const plotH = height - padTop - padBottom;
+    const halfX = 10 / functionZoomScale;
+    const halfY = halfX * (plotH / plotW);
+    const xmin = functionZoomCenterX - halfX;
+    const xmax = functionZoomCenterX + halfX;
+    const ymin = functionZoomCenterY - halfY;
+    const ymax = functionZoomCenterY + halfY;
     const X = x => padLeft + (x - xmin) / (xmax - xmin) * plotW;
     const Y = y => padTop + plotH - (y - ymin) / (ymax - ymin) * plotH;
 
-    // 背景
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, width, height);
+    // 网格间距根据当前视野自动选择，保证拖动和放大后刻度仍然清楚。
+    const niceStep = span => {
+        const raw = span / 10;
+        const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-9))));
+        const n = raw / p;
+        return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+    };
+    const stepX = niceStep(xmax - xmin);
+    const stepY = niceStep(ymax - ymin);
 
-    // 网格和刻度
     ctx.font = "11px Arial, Microsoft YaHei, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    for (let v = xmin; v <= xmax; v++) {
-        const px = X(v);
-        ctx.strokeStyle = v === 0 ? "#9aa3b2" : "#e8ebf0";
-        ctx.lineWidth = v === 0 ? 1.5 : 1;
-        ctx.beginPath(); ctx.moveTo(px, padTop); ctx.lineTo(px, padTop + plotH); ctx.stroke();
-        if (v !== 0) {
-            ctx.fillStyle = "#707988";
-            ctx.fillText(String(v), px, padTop + plotH + 7);
-        }
-    }
-
-    ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    for (let v = ymin; v <= ymax; v++) {
-        const py = Y(v);
-        ctx.strokeStyle = v === 0 ? "#9aa3b2" : "#e8ebf0";
-        ctx.lineWidth = v === 0 ? 1.5 : 1;
-        ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(padLeft + plotW, py); ctx.stroke();
-        if (v !== 0) {
-            ctx.fillStyle = "#707988";
-            ctx.fillText(String(v), padLeft - 8, py);
-        }
+
+    const firstX = Math.ceil(xmin / stepX) * stepX;
+    for (let v = firstX; v <= xmax + stepX * 0.001; v += stepX) {
+        const px = X(v);
+        const axis = Math.abs(v) < stepX * 1e-8;
+        ctx.strokeStyle = axis ? "#9aa3b2" : "#e8ebf0";
+        ctx.lineWidth = axis ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(px, padTop); ctx.lineTo(px, padTop + plotH); ctx.stroke();
+        ctx.fillStyle = "#707988";
+        ctx.textAlign = "center";
+        ctx.fillText(String(Number(v.toFixed(8))), px, padTop + plotH + 17);
     }
 
-    // 原点
-    ctx.fillStyle = "#606978";
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-    ctx.fillText("0", padLeft - 8, Y(0) + 7);
+    const firstY = Math.ceil(ymin / stepY) * stepY;
+    for (let v = firstY; v <= ymax + stepY * 0.001; v += stepY) {
+        const py = Y(v);
+        const axis = Math.abs(v) < stepY * 1e-8;
+        ctx.strokeStyle = axis ? "#9aa3b2" : "#e8ebf0";
+        ctx.lineWidth = axis ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(padLeft + plotW, py); ctx.stroke();
+        ctx.fillStyle = "#707988";
+        ctx.textAlign = "right";
+        ctx.fillText(String(Number(v.toFixed(8))), padLeft - 8, py);
+    }
 
-    // X / Y 轴名称
-    ctx.font = "bold 13px Arial, Microsoft YaHei, sans-serif";
+    // 当坐标轴不在当前视野内时，仍然保留边界提示，避免拖动后“轴消失”时不知道位置。
     ctx.fillStyle = "#4f5968";
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-    ctx.fillText("x", padLeft + plotW, padTop + plotH + 23);
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.fillText("y", padLeft + 7, padTop + 3);
+    ctx.font = "bold 13px Arial, Microsoft YaHei, sans-serif";
+    if (xmin <= 0 && xmax >= 0) {
+        const px = X(0);
+        ctx.textAlign = "left"; ctx.textBaseline = "top";
+        ctx.fillText("y", Math.min(px + 7, padLeft + plotW - 18), padTop + 3);
+    }
+    if (ymin <= 0 && ymax >= 0) {
+        const py = Y(0);
+        ctx.textAlign = "right"; ctx.textBaseline = "top";
+        ctx.fillText("x", padLeft + plotW, Math.max(padTop + 3, py + 8));
+    }
 
-    // 函数曲线
+    const expr = source.dataset.expression || "";
+    const compiled = getFunctionCompiled(expr);
+    if (!compiled) return;
+
     ctx.strokeStyle = "#4f7cff";
     ctx.lineWidth = 2.5;
     ctx.beginPath();
@@ -692,9 +693,8 @@ function drawFunctionGraph() {
         try { y = Number(compiled(x)); } catch { y = NaN; }
         const px = X(x);
         const py = Y(y);
-
-        // 跳过无定义值、无穷值以及跨越整个绘图区的渐近线跳变。
-        if (!Number.isFinite(y) || Math.abs(y) > 100 || (previousY !== null && Math.abs(y - previousY) > 25)) {
+        const visible = Number.isFinite(y) && y >= ymin - (ymax - ymin) * 0.5 && y <= ymax + (ymax - ymin) * 0.5;
+        if (!visible || (previousY !== null && Math.abs(y - previousY) > (ymax - ymin) * 0.45)) {
             drawing = false;
             previousY = null;
             continue;
@@ -704,10 +704,40 @@ function drawFunctionGraph() {
         previousY = y;
     }
     ctx.stroke();
+}
 
-    // 保存当前函数，供导出图片使用。
-    canvas.dataset.expression = input.value.trim();
-    canvas.dataset.drawn = "true";
+function startFunctionZoomDrag(e) {
+    const canvas = document.getElementById("functionZoomCanvas");
+    if (!canvas) return;
+    functionZoomDragging = true;
+    functionZoomDragLastX = e.clientX;
+    functionZoomDragLastY = e.clientY;
+    canvas.classList.add("dragging");
+    if (canvas.setPointerCapture && e.pointerId != null) canvas.setPointerCapture(e.pointerId);
+}
+
+function moveFunctionZoomDrag(e) {
+    if (!functionZoomDragging) return;
+    const canvas = document.getElementById("functionZoomCanvas");
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const plotW = Math.max(1, rect.width - 70);
+    const plotH = Math.max(1, rect.height - 56);
+    const halfX = 10 / functionZoomScale;
+    const halfY = halfX * (plotH / plotW);
+    const dx = e.clientX - functionZoomDragLastX;
+    const dy = e.clientY - functionZoomDragLastY;
+    functionZoomCenterX -= dx * (2 * halfX / plotW);
+    functionZoomCenterY += dy * (2 * halfY / plotH);
+    functionZoomDragLastX = e.clientX;
+    functionZoomDragLastY = e.clientY;
+    renderFunctionZoom();
+}
+
+function endFunctionZoomDrag() {
+    functionZoomDragging = false;
+    const canvas = document.getElementById("functionZoomCanvas");
+    if (canvas) canvas.classList.remove("dragging");
 }
 
 (function initFunctionGraphZoom() {
@@ -718,6 +748,16 @@ function drawFunctionGraph() {
     document.addEventListener("keydown", function(e) {
         if (e.key === "Escape") closeFunctionZoom();
     });
+
+    document.addEventListener("pointerdown", function(e) {
+        const canvas = e.target && e.target.closest ? e.target.closest("#functionZoomCanvas") : null;
+        if (canvas) startFunctionZoomDrag(e);
+    });
+    document.addEventListener("pointermove", function(e) {
+        if (functionZoomDragging) moveFunctionZoomDrag(e);
+    });
+    document.addEventListener("pointerup", endFunctionZoomDrag);
+    document.addEventListener("pointercancel", endFunctionZoomDrag);
 })();
 
 function exportFunctionGraph() {
