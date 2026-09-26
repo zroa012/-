@@ -1,4 +1,4 @@
-const CACHE_NAME = "smart-study-pwa-v1";
+const CACHE_NAME = 'smart-study-v8';
 const APP_SHELL = [
   "./",
   "./index.html",

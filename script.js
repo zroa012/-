@@ -1342,7 +1342,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateStudyModeUI();
     initFirstUseIntro();
     initCalculator();
-    initScienceLab();
+    initNewFeatures();
     setTimeout(() => { drawFunctionGraph(); }, 0);
     window.addEventListener("resize", () => { renderRecent(); drawFunctionGraph(); });
 });
@@ -1496,3 +1496,416 @@ function initCalculator(){
 }
 
 window.addEventListener("resize",()=>{if(geometryState.initialized)drawGeometryBoard();});
+
+/* =========================================================
+   学习助手增强功能
+   - 智能复习排序
+   - 知识点详情
+   - 每日学习目标
+   - 学习日历与个人成长
+   - 错因分析
+   - 本地代码练习区
+   - 每日随机励志语句
+   ========================================================= */
+
+const DAILY_QUOTES = [
+    "最初的鸟儿是不会飞翔的，飞翔是他们勇敢跃入峡谷的奖励，重要的不是强风，而是勇气，是它让你们成为世上最初的飞鸟。",
+    "心有所向，日复一日，必有精进。",
+    "觉得自己是正确的，就要大声地说出来，坚决地去行动，这是我一直以来都贯彻的人生理念。",
+    "不知道如何向前的话，总之先迈出第一步，后面的道路就会自然而然地展开了。",
+    "人们总是喜欢相信自己愿意相信的事。所以有些事，可能只是你不愿看到而已。",
+    "只要你不失去崇高，整个世界都会为你敞开。",
+    "命运总是喜欢开玩笑，但你不能就此屈服。",
+    "无论身在何方，都不要忘记自己的初心。",
+    "即使是最微小的光点，也有划破黑暗的力量。",
+    "与其做一颗无依无靠的流星，不如燃烧自己，照亮一方天地。",
+    "与其做一颗无依无靠的流星，不如燃烧自己，照亮一方天地。",
+    "过去不会被撼动，但你可以继续走。",
+    "洞悉真谛的智者不受罪恶沾染，如沐濯雨露却依然清净的月莲。",
+    "不论前路是星辰还是深渊，能向前迈出下一步都是值得庆贺的事。",
+    "驻足过去的人，不会有未来。",
+    "不是所有折翼坠落的鹰都能腾空，但不冒险就永远碰不到天空。",
+    "只有无坚不摧的意志，才能发挥力量。",
+    "被束缚的鸟永远飞不上天。",
+    "只要坚信自己的道路，就无所谓天气是晴是雨。",
+    "用自己的双脚丈量土地，将未知变为知识"
+]
+
+
+
+const CODE_TEMPLATES = {
+    blank: "",
+    basic: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    return 0;\n}\n`,
+    input: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n\n    return 0;\n}\n`,
+    search: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, target;\n    cin >> n >> target;\n    vector<int> a(n);\n    for (int &x : a) cin >> x;\n\n    int l = 0, r = n - 1;\n    while (l <= r) {\n        int mid = (l + r) / 2;\n        if (a[mid] == target) {\n            cout << mid << '\\n';\n            return 0;\n        }\n        if (a[mid] < target) l = mid + 1;\n        else r = mid - 1;\n    }\n    cout << -1 << '\\n';\n    return 0;\n}\n`,
+    dp: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n + 1), dp(n + 1);\n    for (int i = 1; i <= n; ++i) cin >> a[i];\n\n    // 在这里补充状态定义、转移和初始化。\n\n    return 0;\n}\n`
+};
+
+function getWrongCauseLabel(cause) {
+    return ({
+        concept:"概念不会",
+        understand:"审题错误",
+        method:"思路错误",
+        code:"代码错误",
+        calculation:"计算错误",
+        careless:"粗心"
+    })[cause] || "未分类";
+}
+
+function getWrongCountForNode(nodeId) {
+    return wrongQuestions.filter(q => String(q.nodeId) === String(nodeId)).length;
+}
+
+function getReviewPriority(node) {
+    const today = todayString();
+    const due = !node.nextReview || node.nextReview <= today;
+    const proficiency = Number(node.proficiency || 0);
+    const wrong = getWrongCountForNode(node.id);
+    let daysLate = 0;
+    if (node.nextReview) {
+        const a = new Date(node.nextReview + "T00:00:00");
+        const b = new Date(today + "T00:00:00");
+        daysLate = Math.max(0, Math.round((b - a) / 86400000));
+    }
+    return (due ? 100 : 0) + Math.max(0, 70 - proficiency) + Math.min(25, wrong * 5) + Math.min(20, daysLate * 3);
+}
+
+function smartReviewNodes(limit = 8) {
+    return knowledge.slice().sort((a,b) => getReviewPriority(b) - getReviewPriority(a)).slice(0, limit);
+}
+
+function renderSmartHomePlan() {
+    const el = document.getElementById("homePlan");
+    if (!el) return;
+    if (!knowledge.length) {
+        el.innerHTML = '<div class="empty">还没有知识点。先添加一个知识点，再开始学习。</div>';
+        return;
+    }
+    const list = smartReviewNodes(5);
+    el.innerHTML = list.map(n => {
+        const priority = getReviewPriority(n);
+        const reason = n.nextReview <= todayString() ? "已经到复习时间" : (n.proficiency < 60 ? "熟练度偏低" : "建议巩固");
+        return `<div class="home-review-item">\n            <div>\n                <div class="item-title">${escapeHtml(n.name)}</div>\n                <div class="item-sub">${escapeHtml(n.subject)} · ${reason} · 熟练度 ${n.proficiency}%</div>\n            </div>\n            <button class="review-button" onclick="reviewNode('${String(n.id)}')">去学习</button>\n        </div>`;
+    }).join("");
+}
+
+function renderKnowledgeEnhanced() {
+    const el = document.getElementById("knowledgeList");
+    if (!el) return;
+    if (!knowledge.length) {
+        el.innerHTML = '<div class="empty">还没有知识点，点击“添加知识点”开始吧。</div>';
+        return;
+    }
+    el.innerHTML = knowledge.map(n => `
+        <div class="knowledge-item knowledge-clickable" onclick="openKnowledgeDetail('${String(n.id)}')">
+            <div>
+                <div class="item-title">${escapeHtml(n.name)}</div>
+                <div class="item-sub">${escapeHtml(n.subject)} · 学习 ${n.records} 次 · ${n.lastStudy ? `最近学习 ${n.lastStudy}` : "尚未学习"}</div>
+            </div>
+            <div class="item-right">
+                <span class="progress"><div style="width:${n.proficiency}%"></div></span>
+                <strong>${n.proficiency}%</strong>
+            </div>
+        </div>
+    `).join("");
+}
+
+function openKnowledgeDetail(id) {
+    const node = getNode(id);
+    const modal = document.getElementById("knowledgeDetailModal");
+    const title = document.getElementById("knowledgeDetailTitle");
+    const content = document.getElementById("knowledgeDetailContent");
+    if (!node || !modal || !content) return;
+    if (title) title.textContent = node.name;
+    const relatedWrong = wrongQuestions.filter(q => String(q.nodeId) === String(node.id));
+    const records = studyRecords.filter(r => String(r.nodeId) === String(node.id)).slice(-6).reverse();
+    const priority = Math.round(getReviewPriority(node));
+    content.innerHTML = `
+        <div class="detail-meta"><span>${escapeHtml(node.subject)}</span><span>熟练度 ${node.proficiency}%</span><span>学习 ${node.records} 次</span></div>
+        <div class="detail-progress"><div style="width:${node.proficiency}%"></div></div>
+        <div class="detail-grid">
+            <div><strong>累计学习</strong><span>${records.reduce((s,r)=>s+Number(r.minutes||0),0)} 分钟（最近记录）</span></div>
+            <div><strong>下一次复习</strong><span>${node.nextReview || "待安排"}</span></div>
+            <div><strong>相关错题</strong><span>${relatedWrong.length} 道</span></div>
+            <div><strong>复习优先级</strong><span>${priority}</span></div>
+        </div>
+        <h3 class="detail-section-title">最近学习记录</h3>
+        <div class="detail-records">${records.length ? records.map(r=>`<div><span>${escapeHtml(r.date)}</span><span>${r.minutes} 分钟 · 评价 ${r.result}/5</span></div>`).join("") : '<div class="empty">还没有学习记录。</div>'}</div>
+        <div class="detail-actions"><button class="primary" onclick="closeKnowledgeDetail();reviewNode('${String(node.id)}')">开始复习</button></div>
+    `;
+    modal.classList.add("show");
+}
+
+function closeKnowledgeDetail() {
+    const modal = document.getElementById("knowledgeDetailModal");
+    if (modal) modal.classList.remove("show");
+}
+
+function getTodayRecords() {
+    const today = todayString();
+    return studyRecords.filter(r => r.date === today);
+}
+
+function getDailyGoals() {
+    const key = `dailyGoal_${todayString()}`;
+    let goal;
+    try { goal = JSON.parse(localStorage.getItem(key) || "null"); } catch (_) { goal = null; }
+    if (!goal) {
+        goal = { minutes: 60, topics: 3, sessions: 3 };
+        localStorage.setItem(key, JSON.stringify(goal));
+    }
+    return goal;
+}
+
+function renderHomeGoals() {
+    const el = document.getElementById("homeGoals");
+    if (!el) return;
+    const goal = getDailyGoals();
+    const records = getTodayRecords();
+    const minutes = records.reduce((s,r)=>s+Number(r.minutes||0),0);
+    const topics = new Set(records.map(r=>String(r.nodeId))).size;
+    const sessions = records.length;
+    const rows = [
+        ["学习时间", minutes, goal.minutes, "分钟"],
+        ["学习知识点", topics, goal.topics, "个"],
+        ["学习次数", sessions, goal.sessions, "次"]
+    ];
+    el.innerHTML = rows.map(([name,current,target,unit])=>{
+        const percent = Math.min(100, Math.round(current / Math.max(1,target) * 100));
+        return `<div class="goal-row"><div class="goal-head"><span>${name}</span><strong>${current} / ${target} ${unit}</strong></div><div class="goal-track"><div style="width:${percent}%"></div></div></div>`;
+    }).join("");
+    const tip = document.getElementById("goalDateTip");
+    if (tip) tip.textContent = `${formatDateChinese()} · 完成度 ${Math.round(rows.reduce((s,r)=>s+Math.min(1,r[1]/Math.max(1,r[2])),0)/rows.length*100)}%`;
+}
+
+function renderHomeAdvice() {
+    const el = document.getElementById("homeAdvice");
+    if (!el) return;
+    if (!knowledge.length) {
+        el.innerHTML = '<div class="advice-box"><strong>先建立你的知识库</strong><p>添加几个正在学习的知识点，系统才能根据学习情况生成复习建议。</p></div>';
+        return;
+    }
+    const sorted = knowledge.slice().sort((a,b)=>getReviewPriority(b)-getReviewPriority(a));
+    const node = sorted[0];
+    const wrong = getWrongCountForNode(node.id);
+    let reason = node.proficiency < 60 ? `“${node.name}”目前熟练度为 ${node.proficiency}%，建议优先巩固。` : `“${node.name}”已经到了复习时间，建议今天再练习一次。`;
+    if (wrong) reason += ` 这个知识点还有 ${wrong} 道相关错题，可以一起回顾。`;
+    el.innerHTML = `<div class="advice-box"><strong>今天可以先学习：${escapeHtml(node.name)}</strong><p>${escapeHtml(reason)}</p><button class="primary" onclick="reviewNode('${String(node.id)}')">开始学习</button></div>`;
+}
+
+function getDailyQuote() {
+    const key = "dailyQuoteRecord";
+    let record = null;
+    try { record = JSON.parse(localStorage.getItem(key) || "null"); } catch (_) {}
+    if (!record || record.date !== todayString()) {
+        const index = Math.floor(Math.random() * DAILY_QUOTES.length);
+        record = {date:todayString(), index};
+        localStorage.setItem(key, JSON.stringify(record));
+    }
+    return DAILY_QUOTES[record.index] || DAILY_QUOTES[0];
+}
+
+function renderDailyQuote() {
+    const el = document.getElementById("dailyQuote");
+    if (el) el.textContent = `“${getDailyQuote()}”`;
+}
+
+function getMonthDays(year, month) {
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
+    const firstWeekday = (first.getDay() + 6) % 7;
+    const days = [];
+    for (let i=0;i<firstWeekday;i++) days.push(null);
+    for (let d=1;d<=last.getDate();d++) days.push(new Date(year,month,d));
+    return days;
+}
+
+function renderStudyCalendar() {
+    const el = document.getElementById("studyCalendar");
+    if (!el) return;
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth();
+    const map = {};
+    studyRecords.forEach(r=>{ map[r.date]=(map[r.date]||0)+Number(r.minutes||0); });
+    const days = getMonthDays(y,m);
+    const max = Math.max(1,...Object.values(map).filter((v,i)=>true));
+    const cells = days.map(d=>{
+        if (!d) return '<div class="calendar-cell blank"></div>';
+        const key = `${y}-${String(m+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        const minutes = map[key] || 0;
+        const level = minutes === 0 ? 0 : minutes < 20 ? 1 : minutes < 40 ? 2 : minutes < 60 ? 3 : 4;
+        return `<div class="calendar-cell level-${level}" title="${key}：${minutes} 分钟"><span>${d.getDate()}</span></div>`;
+    }).join("");
+    el.innerHTML = `<div class="calendar-head"><strong>${y}年${m+1}月</strong><span>学习越多，格子越深</span></div><div class="calendar-week">${["一","二","三","四","五","六","日"].map(x=>`<span>${x}</span>`).join("")}</div><div class="calendar-grid">${cells}</div>`;
+}
+
+function getStreak() {
+    const dates = new Set(studyRecords.map(r=>r.date));
+    let d = new Date(); d.setHours(0,0,0,0);
+    let streak = 0;
+    while (dates.has(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`)) {
+        streak++; d.setDate(d.getDate()-1);
+    }
+    return streak;
+}
+
+function getLast30DaysData() {
+    const map = {};
+    studyRecords.forEach(r=>{map[r.date]=(map[r.date]||0)+Number(r.minutes||0);});
+    const out=[];
+    for(let i=29;i>=0;i--){
+        const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i);
+        const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        out.push({date:key,minutes:map[key]||0,label:`${d.getMonth()+1}/${d.getDate()}`});
+    }
+    return out;
+}
+
+function drawGrowthChart(canvas,data) {
+    if(!canvas) return;
+    const rect=canvas.getBoundingClientRect();
+    const width=Math.max(320,Math.floor(rect.width||700)),height=240,dpr=window.devicePixelRatio||1;
+    canvas.width=width*dpr;canvas.height=height*dpr;
+    const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
+    const pad={left:42,right:18,top:20,bottom:32},plotW=width-pad.left-pad.right,plotH=height-pad.top-pad.bottom;
+    const max=Math.max(30,Math.ceil(Math.max(...data.map(x=>x.minutes),0)/10)*10);
+    ctx.font="11px Arial, Microsoft YaHei, sans-serif";ctx.textAlign="right";ctx.textBaseline="middle";ctx.fillStyle="#8b95a3";ctx.strokeStyle="#e9edf1";
+    for(let i=0;i<=3;i++){const y=pad.top+plotH*i/3;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(width-pad.right,y);ctx.stroke();ctx.fillText(String(Math.round(max*(3-i)/3)),pad.left-7,y);}
+    const pts=data.map((d,i)=>({x:pad.left+plotW*i/(data.length-1),y:pad.top+plotH*(1-d.minutes/max)}));
+    ctx.strokeStyle="#4f7cff";ctx.lineWidth=2.5;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
+    pts.forEach((p,i)=>{if(i%5===0||i===pts.length-1){ctx.fillStyle="#4f7cff";ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#7d8793";ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText(data[i].label,p.x,height-pad.bottom+8);}});
+}
+
+function renderGrowth() {
+    const total = studyRecords.reduce((s,r)=>s+Number(r.minutes||0),0);
+    const avg = knowledge.length ? Math.round(knowledge.reduce((s,n)=>s+Number(n.proficiency||0),0)/knowledge.length) : 0;
+    const el=document.getElementById("growthSummary");
+    if(el) el.innerHTML=`<div><strong>${total}</strong><span>累计分钟</span></div><div><strong>${getStreak()}</strong><span>连续学习天数</span></div><div><strong>${avg}%</strong><span>平均熟练度</span></div><div><strong>${knowledge.length}</strong><span>知识点</span></div>`;
+    drawGrowthChart(document.getElementById("growthCanvas"),getLast30DaysData());
+}
+
+function renderWrongCauseStats() {
+    const el=document.getElementById("wrongCauseStats");
+    if(!el) return;
+    const counts={concept:0,understand:0,method:0,code:0,calculation:0,careless:0};
+    wrongQuestions.forEach(q=>{if(counts[q.cause]!==undefined)counts[q.cause]++;});
+    const total=Object.values(counts).reduce((a,b)=>a+b,0);
+    if(!total){el.innerHTML='<div class="empty">记录一些错题后，这里会自动生成错因分析。</div>';return;}
+    el.innerHTML=Object.entries(counts).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="cause-row"><span>${getWrongCauseLabel(k)}</span><div class="cause-track"><div style="width:${Math.round(v/total*100)}%"></div></div><strong>${Math.round(v/total*100)}%</strong></div>`).join("");
+}
+
+function initCodePractice() {
+    const editor=document.getElementById("codeEditor");
+    if(!editor||editor.dataset.init)return;
+    editor.dataset.init="true";
+    const saved=localStorage.getItem("codeDraft");
+    if(saved!==null) editor.value=saved;
+    let timer=null;
+    editor.addEventListener("input",()=>{
+        clearTimeout(timer);
+        timer=setTimeout(()=>{localStorage.setItem("codeDraft",editor.value);const s=document.getElementById("codeSaveStatus");if(s)s.textContent="已自动保存";},250);
+    });
+}
+
+function loadCodeTemplate(){
+    const select=document.getElementById("codeTemplateSelect"),editor=document.getElementById("codeEditor");
+    if(!select||!editor)return;
+    if(editor.value.trim() && !confirm("载入模板会替换当前代码，确定继续吗？"))return;
+    editor.value=CODE_TEMPLATES[select.value]||"";
+    localStorage.setItem("codeDraft",editor.value);
+    showMessage("代码模板已载入");
+}
+function copyCodeDraft(){
+    const editor=document.getElementById("codeEditor");if(!editor)return;
+    navigator.clipboard?.writeText(editor.value).then(()=>showMessage("代码已复制"),()=>showMessage("复制失败，请手动复制"));
+}
+function clearCodeDraft(){
+    const editor=document.getElementById("codeEditor");if(!editor)return;
+    if(!confirm("确定清空当前代码吗？"))return;
+    editor.value="";localStorage.removeItem("codeDraft");showMessage("代码已清空");
+}
+
+function renderRecentEnhanced(){
+    const data=getLast7DaysData();
+    const el=document.getElementById("recentList");
+    if(el) el.innerHTML=data.slice().reverse().map(x=>`<div class="recent-row"><span>${x.date}</span><strong>${x.minutes} 分钟</strong></div>`).join("");
+    const time=data.reduce((s,x)=>s+x.minutes,0),days=data.filter(x=>x.minutes>0).length;
+    const setText=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    setText("recentTime",time);setText("recentDays",days);setText("recentAverage",days?Math.round(time/days):0);setText("recentRecords",studyRecords.length);
+    drawLineChart(document.getElementById("studyTrendCanvas"),data,{height:300});
+    drawLineChart(document.getElementById("homeTrendCanvas"),data,{height:230});
+    renderStudyCalendar();renderGrowth();
+}
+
+function renderWrongQuestionsEnhanced(){
+    const el=document.getElementById("wrongList"),count=document.getElementById("wrongCountTip");
+    if(count)count.textContent=`${wrongQuestions.length} 道错题`;
+    if(!el)return;
+    if(!wrongQuestions.length){el.innerHTML='<div class="empty">还没有错题。完成学习后，如果有错题可以直接记录到这里。</div>';renderWrongCauseStats();return;}
+    el.innerHTML=wrongQuestions.map(q=>`<div class="wrong-item"><div class="wrong-item-head"><div><div class="item-title">${escapeHtml(q.knowledgeName)}</div><div class="item-sub">${escapeHtml(q.subject)} · ${escapeHtml(q.date)} · ${getWrongCauseLabel(q.cause)}</div></div><button class="delete-btn" onclick="deleteWrongQuestion('${String(q.id)}')">删除</button></div><div class="wrong-content"><strong>题目：</strong>${escapeHtml(q.content)}</div>${q.mistake?`<div class="wrong-content"><strong>我的错误：</strong>${escapeHtml(q.mistake)}</div>`:""}${q.answer?`<div class="wrong-content"><strong>正确答案 / 解析：</strong>${escapeHtml(q.answer)}</div>`:""}</div>`).join("");
+    renderWrongCauseStats();
+}
+
+function refreshEnhanced(){
+    document.getElementById("homeDate")?.replaceChildren(document.createTextNode(formatDateChinese()));
+    const totalMinutes=studyRecords.reduce((s,r)=>s+Number(r.minutes||0),0);
+    const avg=knowledge.length?Math.round(knowledge.reduce((s,n)=>s+Number(n.proficiency||0),0)/knowledge.length):0;
+    const due=dueNodes();
+    const setText=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    setText("homeKnowledge",knowledge.length);setText("homeReview",due.length);setText("homeTime",totalMinutes);setText("homeProficiency",avg);
+    renderKnowledgeEnhanced();renderRecentEnhanced();renderWeak();renderDelete();renderSmartHomePlan();renderHomeWeak();renderHomeStats();renderWrongQuestionsEnhanced();renderHomeGoals();renderHomeAdvice();renderDailyQuote();
+}
+
+// 用增强版刷新函数覆盖旧版，避免修改原有稳定功能。
+function refresh(){ refreshEnhanced(); }
+
+function renderKnowledge(){ renderKnowledgeEnhanced(); }
+function renderRecent(){ renderRecentEnhanced(); }
+function renderWrongQuestions(){ renderWrongQuestionsEnhanced(); }
+
+// 错题保存逻辑增加错误原因，并兼容旧数据。
+const originalSaveWrongQuestion = saveWrongQuestion;
+saveWrongQuestion = function(continueAdding){
+    const cause=document.getElementById("wrongCause")?.value || "concept";
+    const content=document.getElementById("wrongContent")?.value.trim();
+    if(!content){showMessage("请先填写题目或错题内容");return;}
+    const node=pendingStudyNodeId?getNode(pendingStudyNodeId):null;
+    wrongQuestions.unshift({id:Date.now()+Math.random(),date:todayString(),nodeId:pendingStudyNodeId||"",subject:node?.subject||"未分类",knowledgeName:node?.name||"未指定知识点",content,mistake:document.getElementById("wrongMistake")?.value.trim()||"",answer:document.getElementById("wrongAnswer")?.value.trim()||"",cause});
+    saveData();renderWrongQuestionsEnhanced();clearWrongQuestionForm();showMessage("错题已加入错题本");
+    if(!continueAdding){closeWrongQuestionModal();return;}
+};
+
+const originalClearWrongQuestionForm = clearWrongQuestionForm;
+clearWrongQuestionForm = function(){
+    ["wrongContent","wrongMistake","wrongAnswer"].forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
+    const cause=document.getElementById("wrongCause");if(cause)cause.value="concept";
+};
+
+function initNewFeatures(){
+    wrongQuestions.forEach(q=>{if(!q.cause)q.cause="concept";});
+    saveData();
+    initCodePractice();
+    renderDailyQuote();
+}
+
+// 更新初始化：保留原有初始化顺序，只移除已经不存在的旧科学实验室调用。
+
+/* 智能复习：根据熟练度、错题数和复习到期情况动态调整下一次复习日期。 */
+const baseStudyTimeForSmartReview = studyTime;
+studyTime = function(){
+    const beforeFinished = timerFinished;
+    baseStudyTimeForSmartReview();
+    if (!beforeFinished || !pendingStudyNodeId) return;
+    const node = getNode(pendingStudyNodeId);
+    if (!node) return;
+    const result = Number(document.querySelector('input[name="studyResult"]:checked')?.value || 3);
+    const wrong = getWrongCountForNode(node.id);
+    let interval = result <= 1 ? 1 : result === 2 ? 2 : result === 3 ? 4 : result === 4 ? 7 : 12;
+    if (node.proficiency < 40) interval = Math.min(interval, 2);
+    if (wrong >= 2) interval = Math.min(interval, 3);
+    const next = new Date();
+    next.setDate(next.getDate() + interval);
+    node.nextReview = `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,"0")}-${String(next.getDate()).padStart(2,"0")}`;
+    saveData();
+    refresh();
+};

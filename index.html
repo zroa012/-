@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智能学习助手</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f3f5f7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -31,6 +36,7 @@
             <button onclick="showPage('recent')">今日学习状况</button>
             <button onclick="showPage('wrong')">错题本</button>
             <button onclick="showPage('weak')">薄弱知识点</button>
+            <button onclick="showPage('code')">代码练习区</button>
             <button onclick="showPage('tools')">更多学习工具</button>
         </div>
 
@@ -116,6 +122,31 @@
                     <canvas id="homeTrendCanvas" class="trend-canvas mini-trend"></canvas>
                 </div>
             </div>
+
+            <div class="home-grid home-extra-grid">
+                <div class="panel">
+                    <div class="panel-title">
+                        <h2>今日学习目标</h2>
+                        <span class="panel-tip" id="goalDateTip"></span>
+                    </div>
+                    <div id="homeGoals"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title">
+                        <h2>今日学习建议</h2>
+                        <span class="panel-tip">根据学习情况生成</span>
+                    </div>
+                    <div id="homeAdvice"></div>
+                </div>
+            </div>
+
+            <div class="panel quote-panel">
+                <div class="panel-title">
+                    <h2>每日一句</h2>
+                    <span class="panel-tip">每天自动更换</span>
+                </div>
+                <div id="dailyQuote" class="daily-quote"></div>
+            </div>
         </div>
 
         <div id="knowledge" class="page">
@@ -134,8 +165,8 @@
             <div class="form-box">
                 <label>学习方式</label>
                 <div class="study-mode-selector" id="studyModeSelector">
-                    <button type="button" class="study-mode-btn" id="paperStudyMode" onclick="setStudyMode('paper')">📖 纸质学习</button>
-                    <button type="button" class="study-mode-btn" id="onlineStudyMode" onclick="setStudyMode('online')">🌐 上网学习</button>
+                    <button type="button" class="study-mode-btn" id="paperStudyMode" onclick="setStudyMode('paper')">纸质学习</button>
+                    <button type="button" class="study-mode-btn" id="onlineStudyMode" onclick="setStudyMode('online')">上网学习</button>
                 </div>
                 <div class="study-mode-hint" id="studyModeHint">纸质学习：切换到其他网页/标签页时，正在进行的倒计时会重置。</div>
 
@@ -260,6 +291,24 @@
                 <h2>每日学习明细</h2>
                 <div id="recentList"></div>
             </div>
+
+            <div class="recent-extra-grid">
+                <div class="panel">
+                    <div class="panel-title">
+                        <h2>学习日历</h2>
+                        <span class="panel-tip">本月学习记录</span>
+                    </div>
+                    <div id="studyCalendar"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title">
+                        <h2>个人成长</h2>
+                        <span class="panel-tip">累计学习与掌握情况</span>
+                    </div>
+                    <div class="growth-summary" id="growthSummary"></div>
+                    <canvas id="growthCanvas" class="trend-canvas"></canvas>
+                </div>
+            </div>
         </div>
 
         <div id="wrong" class="page">
@@ -274,6 +323,13 @@
                 </div>
                 <div id="wrongList"></div>
             </div>
+            <div class="panel">
+                <div class="panel-title">
+                    <h2>错因分析</h2>
+                    <span class="panel-tip">帮助你找到容易出错的环节</span>
+                </div>
+                <div id="wrongCauseStats" class="cause-stats"></div>
+            </div>
         </div>
 
         <div id="weak" class="page">
@@ -281,6 +337,35 @@
                 <h1>薄弱知识点</h1>
             </div>
             <div id="weakList"></div>
+        </div>
+
+        <div id="code" class="page">
+            <div class="page-title">
+                <h1>代码练习区</h1>
+                <p>用于记录 C++ 练习代码和算法草稿，内容保存在本地。</p>
+            </div>
+            <div class="panel code-panel">
+                <div class="code-toolbar">
+                    <select id="codeTemplateSelect">
+                        <option value="blank">空白代码</option>
+                        <option value="basic">C++ 基础模板</option>
+                        <option value="input">C++ 输入输出模板</option>
+                        <option value="search">二分查找模板</option>
+                        <option value="dp">动态规划模板</option>
+                    </select>
+                    <button class="secondary" type="button" onclick="loadCodeTemplate()">载入模板</button>
+                    <button class="secondary" type="button" onclick="copyCodeDraft()">复制代码</button>
+                    <button class="secondary" type="button" onclick="clearCodeDraft()">清空</button>
+                    <span id="codeSaveStatus" class="panel-tip">自动保存到本地</span>
+                </div>
+                <textarea id="codeEditor" class="code-editor" spellcheck="false" placeholder="#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    return 0;
+}"></textarea>
+                <div class="code-note">当前版本用于代码记录和练习草稿，不在浏览器中编译 C++。提交到在线评测平台后再进行编译运行。</div>
+            </div>
         </div>
 
         <div id="tools" class="page">
@@ -420,6 +505,15 @@
             <textarea id="wrongMistake" placeholder="我在哪一步做错了？"></textarea>
             <label>正确答案 / 解析</label>
             <textarea id="wrongAnswer" placeholder="写下正确答案、关键步骤或解析"></textarea>
+            <label>错误原因</label>
+            <select id="wrongCause">
+                <option value="concept">概念不会</option>
+                <option value="understand">审题错误</option>
+                <option value="method">思路错误</option>
+                <option value="code">代码错误</option>
+                <option value="calculation">计算错误</option>
+                <option value="careless">粗心</option>
+            </select>
             <div class="wrong-form-buttons">
                 <button class="primary" type="button" onclick="saveWrongQuestion(true)">保存并继续添加</button>
                 <button class="secondary" type="button" onclick="saveWrongQuestion(false)">保存并完成</button>
@@ -428,9 +522,24 @@
     </div>
 </div>
 
+<div id="knowledgeDetailModal" class="modal">
+    <div class="modal-box knowledge-detail-box">
+        <div class="modal-title">
+            <h2 id="knowledgeDetailTitle">知识点详情</h2>
+            <button type="button" onclick="closeKnowledgeDetail()">×</button>
+        </div>
+        <div id="knowledgeDetailContent"></div>
+    </div>
+</div>
+
 <div id="message" class="message"></div>
 
 <script src="script.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+}
+</script>
 
 </body>
 </html>
