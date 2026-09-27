@@ -706,6 +706,129 @@ function renderFunctionZoom() {
     ctx.stroke();
 }
 
+function drawFunctionGraph() {
+    const canvas = document.getElementById("functionCanvas");
+    const input = document.getElementById("functionInput");
+    if (!canvas || !input) return;
+
+    const expr = input.value.trim().replace(/×/g, "*").replace(/π/g, "Math.PI");
+    if (!expr) { showMessage("请输入函数表达式"); return; }
+
+    let compiled;
+    try {
+        const safe = expr
+            .replace(/\^/g, "**")
+            .replace(/\bsin\b/gi, "Math.sin")
+            .replace(/\bcos\b/gi, "Math.cos")
+            .replace(/\btan\b/gi, "Math.tan")
+            .replace(/\bsqrt\b/gi, "Math.sqrt")
+            .replace(/\babs\b/gi, "Math.abs")
+            .replace(/\blog\b/gi, "Math.log10");
+        if (!/^[0-9xX+\-*/().,\sA-Za-z*_]+$/.test(safe)) throw new Error("非法字符");
+        compiled = new Function("x", `return (${safe});`);
+    } catch (e) {
+        showMessage("函数表达式无法识别，请检查格式");
+        return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(420, Math.floor(rect.width || 650));
+    const height = 380;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    // 坐标范围：-10 到 10，每 1 个单位一个刻度。
+    const xmin = -10, xmax = 10, ymin = -10, ymax = 10;
+    const padLeft = 48, padRight = 18, padTop = 18, padBottom = 36;
+    const plotW = width - padLeft - padRight;
+    const plotH = height - padTop - padBottom;
+    const X = x => padLeft + (x - xmin) / (xmax - xmin) * plotW;
+    const Y = y => padTop + plotH - (y - ymin) / (ymax - ymin) * plotH;
+
+    // 背景
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+
+    // 网格和刻度
+    ctx.font = "11px Arial, Microsoft YaHei, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    for (let v = xmin; v <= xmax; v++) {
+        const px = X(v);
+        ctx.strokeStyle = v === 0 ? "#9aa3b2" : "#e8ebf0";
+        ctx.lineWidth = v === 0 ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(px, padTop); ctx.lineTo(px, padTop + plotH); ctx.stroke();
+        if (v !== 0) {
+            ctx.fillStyle = "#707988";
+            ctx.fillText(String(v), px, padTop + plotH + 7);
+        }
+    }
+
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    for (let v = ymin; v <= ymax; v++) {
+        const py = Y(v);
+        ctx.strokeStyle = v === 0 ? "#9aa3b2" : "#e8ebf0";
+        ctx.lineWidth = v === 0 ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(padLeft + plotW, py); ctx.stroke();
+        if (v !== 0) {
+            ctx.fillStyle = "#707988";
+            ctx.fillText(String(v), padLeft - 8, py);
+        }
+    }
+
+    // 原点
+    ctx.fillStyle = "#606978";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+    ctx.fillText("0", padLeft - 8, Y(0) + 7);
+
+    // X / Y 轴名称
+    ctx.font = "bold 13px Arial, Microsoft YaHei, sans-serif";
+    ctx.fillStyle = "#4f5968";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+    ctx.fillText("x", padLeft + plotW, padTop + plotH + 23);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("y", padLeft + 7, padTop + 3);
+
+    // 函数曲线
+    ctx.strokeStyle = "#4f7cff";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    let drawing = false;
+    let previousY = null;
+    for (let i = 0; i <= plotW; i++) {
+        const x = xmin + (xmax - xmin) * i / plotW;
+        let y;
+        try { y = Number(compiled(x)); } catch { y = NaN; }
+        const px = X(x);
+        const py = Y(y);
+
+        // 跳过无定义值、无穷值以及跨越整个绘图区的渐近线跳变。
+        if (!Number.isFinite(y) || Math.abs(y) > 100 || (previousY !== null && Math.abs(y - previousY) > 25)) {
+            drawing = false;
+            previousY = null;
+            continue;
+        }
+        if (!drawing) { ctx.moveTo(px, py); drawing = true; }
+        else ctx.lineTo(px, py);
+        previousY = y;
+    }
+    ctx.stroke();
+
+    // 保存当前函数，供导出图片使用。
+    canvas.dataset.expression = input.value.trim();
+    canvas.dataset.drawn = "true";
+}
+
+
 function startFunctionZoomDrag(e) {
     const canvas = document.getElementById("functionZoomCanvas");
     if (!canvas) return;
