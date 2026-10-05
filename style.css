@@ -1288,3 +1288,37 @@ input:focus,select:focus,textarea:focus,
     .growth-summary{grid-template-columns:1fr 1fr;}
     .cause-row{grid-template-columns:76px 1fr 36px;gap:7px;}
 }
+
+
+/* 数据管理 */
+.data-management-panel {
+    min-height: 0;
+}
+.data-management-desc {
+    margin: 0 0 14px;
+    color: #707988;
+    font-size: 13px;
+    line-height: 1.7;
+}
+.data-management-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.data-management-actions button {
+    min-width: 130px;
+}
+.data-management-status {
+    margin-top: 11px;
+    color: #9aa2ae;
+    font-size: 12px;
+    line-height: 1.6;
+}
+@media (max-width: 700px) {
+    .data-management-actions {
+        flex-direction: column;
+    }
+    .data-management-actions button {
+        width: 100%;
+    }
+}

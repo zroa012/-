@@ -528,6 +528,114 @@ function openTool(url) {
     window.open(url,"_blank","noopener,noreferrer");
 }
 
+/* =========================
+   学习数据：导出 / 导入备份
+   ========================= */
+function getStudyDataBackup() {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key !== null) data[key] = localStorage.getItem(key);
+    }
+
+    return {
+        app: "智能学习助手",
+        formatVersion: 1,
+        exportedAt: new Date().toISOString(),
+        localStorage: data
+    };
+}
+
+function setDataManagementStatus(text, success = false) {
+    const el = document.getElementById("dataManagementStatus");
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = success ? "#42a776" : "#9aa2ae";
+}
+
+function exportStudyData() {
+    try {
+        const backup = getStudyDataBackup();
+        const json = JSON.stringify(backup, null, 2);
+        const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const date = todayString();
+        a.href = url;
+        a.download = `智能学习助手_学习数据备份_${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setDataManagementStatus(`备份已导出：${date}，共保存当前浏览器中的学习数据。`, true);
+        showMessage("学习数据备份已导出");
+    } catch (error) {
+        console.error(error);
+        setDataManagementStatus("导出失败，请稍后重试。");
+        showMessage("学习数据导出失败");
+    }
+}
+
+function importStudyData(input) {
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function () {
+        try {
+            const backup = JSON.parse(reader.result);
+            if (!backup || backup.app !== "智能学习助手" || !backup.localStorage || typeof backup.localStorage !== "object") {
+                throw new Error("invalid backup");
+            }
+
+            const storage = backup.localStorage;
+            const requiredKeys = ["studyKnowledge", "studyRecords", "wrongQuestions"];
+            if (!requiredKeys.every(key => Object.prototype.hasOwnProperty.call(storage, key))) {
+                throw new Error("missing study data");
+            }
+
+            const knowledgeData = JSON.parse(storage.studyKnowledge);
+            const recordData = JSON.parse(storage.studyRecords);
+            const wrongData = JSON.parse(storage.wrongQuestions);
+            if (!Array.isArray(knowledgeData) || !Array.isArray(recordData) || !Array.isArray(wrongData)) {
+                throw new Error("invalid arrays");
+            }
+
+            if (!confirm("导入备份会覆盖当前学习数据，确定继续吗？")) {
+                input.value = "";
+                return;
+            }
+
+            Object.keys(storage).forEach(key => {
+                localStorage.setItem(key, storage[key]);
+            });
+
+            knowledge = knowledgeData;
+            studyRecords = recordData;
+            wrongQuestions = wrongData;
+            refresh();
+
+            const exportedAt = backup.exportedAt ? new Date(backup.exportedAt) : null;
+            const timeText = exportedAt && !Number.isNaN(exportedAt.getTime())
+                ? exportedAt.toLocaleString("zh-CN")
+                : "备份文件";
+            setDataManagementStatus(`已恢复 ${timeText} 的学习数据。`, true);
+            showMessage("学习数据已恢复");
+        } catch (error) {
+            console.error(error);
+            setDataManagementStatus("导入失败：文件不是有效的智能学习助手备份。", false);
+            showMessage("学习数据导入失败");
+        } finally {
+            input.value = "";
+        }
+    };
+    reader.onerror = function () {
+        setDataManagementStatus("读取备份文件失败，请重试。", false);
+        input.value = "";
+    };
+    reader.readAsText(file, "utf-8");
+}
+
 
 function openFunctionZoom() {
     const source = document.getElementById("functionCanvas");
