@@ -75,6 +75,10 @@ function showPage(id) {
     const page = document.getElementById(id);
     if (page) page.classList.add("active");
 
+    document.querySelectorAll(".menu button[data-page], .topbar-nav button[data-page], .sidebar-bottom button[data-page]").forEach(button => {
+        button.classList.toggle("active", button.dataset.page === id);
+    });
+
     if (id === "study") {
         timerPageActive = true;
         fillStudySelect();
@@ -482,7 +486,7 @@ function drawLineChart(canvas, data, options = {}) {
         x: pad.left + (data.length===1 ? plotW/2 : plotW*i/(data.length-1)),
         y: pad.top + plotH*(1-item.minutes/maxVal)
     }));
-    ctx.strokeStyle="#4f7cff";
+    ctx.strokeStyle="#334EAC";
     ctx.lineWidth=3;
     ctx.lineJoin="round";
     ctx.lineCap="round";
@@ -490,7 +494,7 @@ function drawLineChart(canvas, data, options = {}) {
     points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
     ctx.stroke();
     points.forEach((p,i)=>{
-        ctx.fillStyle="#4f7cff";
+        ctx.fillStyle="#334EAC";
         ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fill();
         ctx.fillStyle="#606978"; ctx.textAlign="center"; ctx.textBaseline="top";
         ctx.fillText(data[i].label,p.x,height-pad.bottom+12);
@@ -790,7 +794,7 @@ function renderFunctionZoom() {
     const compiled = getFunctionCompiled(expr);
     if (!compiled) return;
 
-    ctx.strokeStyle = "#4f7cff";
+    ctx.strokeStyle = "#334EAC";
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     let drawing = false;
@@ -907,7 +911,7 @@ function drawFunctionGraph() {
     ctx.fillText("y", padLeft + 7, padTop + 3);
 
     // 函数曲线
-    ctx.strokeStyle = "#4f7cff";
+    ctx.strokeStyle = "#334EAC";
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     let drawing = false;
@@ -1049,15 +1053,15 @@ function exportStudyImage() {
     ctx.fillStyle="#202938";ctx.font="bold 30px Arial, Microsoft YaHei, sans-serif";ctx.fillText("智能学习助手 · 学习情况",75,90);
     ctx.fillStyle="#8c95a3";ctx.font="16px Arial, Microsoft YaHei, sans-serif";ctx.fillText(`生成日期：${formatDateChinese()}`,75,120);
     const total=data.reduce((s,x)=>s+x.minutes,0), days=data.filter(x=>x.minutes>0).length;
-    ctx.fillStyle="#4f7cff";ctx.font="bold 24px Arial";ctx.fillText(String(total),75,180);ctx.fillStyle="#606978";ctx.font="14px Arial, Microsoft YaHei, sans-serif";ctx.fillText("近7天学习分钟",75,205);
+    ctx.fillStyle="#334EAC";ctx.font="bold 24px Arial";ctx.fillText(String(total),75,180);ctx.fillStyle="#606978";ctx.font="14px Arial, Microsoft YaHei, sans-serif";ctx.fillText("近7天学习分钟",75,205);
     ctx.fillStyle="#42c98b";ctx.font="bold 24px Arial";ctx.fillText(String(days),250,180);ctx.fillStyle="#606978";ctx.font="14px Arial, Microsoft YaHei, sans-serif";ctx.fillText("学习天数",250,205);
     ctx.fillStyle="#9b72e8";ctx.font="bold 24px Arial";ctx.fillText(String(studyRecords.length),390,180);ctx.fillStyle="#606978";ctx.font="14px Arial, Microsoft YaHei, sans-serif";ctx.fillText("累计学习次数",390,205);
     const left=75,top=250,cw=950,ch=350,maxVal=Math.max(10,Math.ceil(Math.max(...data.map(x=>x.minutes),0)/10)*10);
     ctx.strokeStyle="#e8ebf0";ctx.lineWidth=1;ctx.font="12px Arial";ctx.fillStyle="#8c95a3";ctx.textAlign="right";
     for(let i=0;i<=5;i++){const y=top+ch*i/5;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(left+cw,y);ctx.stroke();ctx.fillText(String(Math.round(maxVal*(5-i)/5)),left-10,y+4);}
     const pts=data.map((d,i)=>({x:left+cw*i/6,y:top+ch*(1-d.minutes/maxVal)}));
-    ctx.strokeStyle="#4f7cff";ctx.lineWidth=4;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
-    pts.forEach((p,i)=>{ctx.fillStyle="#4f7cff";ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle="#606978";ctx.textAlign="center";ctx.font="13px Arial";ctx.fillText(data[i].label,p.x,top+ch+25);});
+    ctx.strokeStyle="#334EAC";ctx.lineWidth=4;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
+    pts.forEach((p,i)=>{ctx.fillStyle="#334EAC";ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle="#606978";ctx.textAlign="center";ctx.font="13px Arial";ctx.fillText(data[i].label,p.x,top+ch+25);});
     const a=document.createElement("a");a.download=`学习情况_${todayString()}.png`;a.href=canvas.toDataURL("image/png");a.click();
     showMessage("学习情况图片已导出");
 }
@@ -1261,7 +1265,7 @@ function initFirstUseIntro() {
             box-shadow:0 8px 28px rgba(0,0,0,.07);
         }
         .first-use-kicker{
-            color:#4f7cff;
+            color:#334EAC;
             font-size:13px;
             margin-bottom:8px;
         }
@@ -1333,7 +1337,7 @@ function initFirstUseIntro() {
         }
         .flow-step b{
             display:block;
-            color:#4f7cff;
+            color:#334EAC;
             font-size:12px;
             margin-bottom:6px;
         }
@@ -1368,16 +1372,16 @@ function initFirstUseIntro() {
             min-width:150px;
             height:42px;
             padding:0 22px;
-            border:1px solid #4f7cff;
+            border:1px solid #334EAC;
             border-radius:5px;
-            background:#4f7cff;
+            background:#334EAC;
             color:#fff;
             font-size:14px;
             cursor:pointer;
         }
         #startUsingButton:hover{
-            background:#416ee8;
-            border-color:#416ee8;
+            background:#081F5C;
+            border-color:#081F5C;
         }
         @media(max-width:650px){
             .first-use-card{padding:28px 20px 24px;}
@@ -1680,7 +1684,7 @@ function drawGeometryBoard() {
     ctx.fillText("x",w-16,oy-7);ctx.fillText("y",ox+7,15);ctx.fillText("0",ox+6,oy+14);
 
     geometryState.objects.forEach(o=>{
-        ctx.strokeStyle="#4f7cff";ctx.fillStyle="#4f7cff";ctx.lineWidth=2;
+        ctx.strokeStyle="#334EAC";ctx.fillStyle="#334EAC";ctx.lineWidth=2;
         if(o.type==="point"){ctx.beginPath();ctx.arc(o.a.x,o.a.y,5,0,Math.PI*2);ctx.fill();}
         if(o.type==="segment"||o.type==="line"){
             let dx=o.b.x-o.a.x,dy=o.b.y-o.a.y;
@@ -2086,8 +2090,8 @@ function drawGrowthChart(canvas,data) {
     ctx.font="11px Arial, Microsoft YaHei, sans-serif";ctx.textAlign="right";ctx.textBaseline="middle";ctx.fillStyle="#8b95a3";ctx.strokeStyle="#e9edf1";
     for(let i=0;i<=3;i++){const y=pad.top+plotH*i/3;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(width-pad.right,y);ctx.stroke();ctx.fillText(String(Math.round(max*(3-i)/3)),pad.left-7,y);}
     const pts=data.map((d,i)=>({x:pad.left+plotW*i/(data.length-1),y:pad.top+plotH*(1-d.minutes/max)}));
-    ctx.strokeStyle="#4f7cff";ctx.lineWidth=2.5;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
-    pts.forEach((p,i)=>{if(i%5===0||i===pts.length-1){ctx.fillStyle="#4f7cff";ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#7d8793";ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText(data[i].label,p.x,height-pad.bottom+8);}});
+    ctx.strokeStyle="#334EAC";ctx.lineWidth=2.5;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
+    pts.forEach((p,i)=>{if(i%5===0||i===pts.length-1){ctx.fillStyle="#334EAC";ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#7d8793";ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText(data[i].label,p.x,height-pad.bottom+8);}});
 }
 
 function renderGrowth() {

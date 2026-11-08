@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智能学习助手</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f3f5f7">
+    <meta name="theme-color" content="#F9FCFF">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="style.css?v=20260926">
+    <link rel="stylesheet" href="style.css?v=20261108-blue">
 </head>
 <body>
 
@@ -29,32 +29,66 @@
             </div>
         </div>
 
-        <div class="menu">
-            <button onclick="showPage('home')">首页</button>
-            <button onclick="showPage('knowledge')">已学知识点</button>
-            <button onclick="showPage('study')">开始学习</button>
-            <button onclick="showPage('recent')">今日学习状况</button>
-            <button onclick="showPage('wrong')">错题本</button>
-            <button onclick="showPage('weak')">薄弱知识点</button>
-            <button onclick="showPage('code')">在线编译器</button>
-            <button onclick="showPage('tools')">更多学习工具</button>
+        <div class="menu" aria-label="主导航">
+            <button data-page="home" class="active" title="首页" onclick="showPage('home')"><span class="nav-icon">⌂</span><span class="nav-label">首页</span></button>
+            <button data-page="knowledge" title="已学知识点" onclick="showPage('knowledge')"><span class="nav-icon">▦</span><span class="nav-label">知识点管理</span></button>
+            <button data-page="study" title="开始学习" onclick="showPage('study')"><span class="nav-icon">◷</span><span class="nav-label">开始学习</span></button>
+            <button data-page="recent" title="今日学习状况" onclick="showPage('recent')"><span class="nav-icon">▤</span><span class="nav-label">学习统计</span></button>
+            <button data-page="wrong" title="错题本" onclick="showPage('wrong')"><span class="nav-icon">✎</span><span class="nav-label">错题本</span></button>
+            <button data-page="weak" title="薄弱知识点" onclick="showPage('weak')"><span class="nav-icon">◉</span><span class="nav-label">薄弱知识点</span></button>
+            <button data-page="code" title="在线编译器" onclick="showPage('code')"><span class="nav-icon">⌘</span><span class="nav-label">在线编译器</span></button>
+            <button data-page="tools" title="更多学习工具" onclick="showPage('tools')"><span class="nav-icon">⚙</span><span class="nav-label">学习工具</span></button>
         </div>
 
         <div class="sidebar-bottom">
-            <button class="add-button" onclick="showAdd()">＋ 添加知识点</button>
-            <button class="delete-button" onclick="showPage('delete')">删除知识点</button>
+            <button class="add-button" onclick="showAdd()"><span class="nav-icon">＋</span><span class="nav-label">添加知识点</span></button>
+            <button class="delete-button" data-page="delete" onclick="showPage('delete')"><span class="nav-icon">⌫</span><span class="nav-label">删除知识点</span></button>
         </div>
     </aside>
 
     <main class="main">
+        <header class="topbar">
+            <div class="topbar-brand">
+                <span class="topbar-mark">S</span>
+                <span>智能学习助手</span>
+            </div>
+            <nav class="topbar-nav" aria-label="快捷导航">
+                <button class="top-tab active" data-page="home" onclick="showPage('home')">工作台</button>
+                <button class="top-tab" data-page="knowledge" onclick="showPage('knowledge')">知识管理</button>
+                <button class="top-tab" data-page="tools" onclick="showPage('tools')">学习工具</button>
+            </nav>
+            <div class="topbar-actions">
+                <button class="topbar-export" type="button" onclick="exportStudyData()">↓ 导出数据</button>
+                <button class="topbar-add" type="button" onclick="showAdd()">＋ 添加知识点</button>
+            </div>
+        </header>
 
         <div id="home" class="page active">
             <div class="top">
                 <div>
-                    <p class="hello">你好啊！</p>
-                    <h1>今天也要好好学习</h1>
+                    <p class="hello">SMART STUDY · PERSONAL LEARNING SPACE</p>
+                    <h1>你好，今天也要好好学习！</h1>
+                    <p class="hero-subtitle">把知识一点点变成自己的能力。今天的学习计划已经为你准备好了。</p>
                     <p class="date" id="homeDate"></p>
                 </div>
+            </div>
+
+            <div class="quick-actions">
+                <button class="quick-card" type="button" onclick="showPage('study')">
+                    <span class="quick-icon">◷</span>
+                    <span class="quick-copy"><strong>开始专注学习</strong><small>选择知识点，开启专注计时</small></span>
+                    <span class="quick-arrow">→</span>
+                </button>
+                <button class="quick-card" type="button" onclick="showPage('knowledge')">
+                    <span class="quick-icon">▦</span>
+                    <span class="quick-copy"><strong>整理知识体系</strong><small>查看掌握程度与学习记录</small></span>
+                    <span class="quick-arrow">→</span>
+                </button>
+                <button class="quick-card" type="button" onclick="showPage('tools')">
+                    <span class="quick-icon">⌘</span>
+                    <span class="quick-copy"><strong>打开学习工具</strong><small>使用计算器、函数图像与画板</small></span>
+                    <span class="quick-arrow">→</span>
+                </button>
             </div>
 
             <div class="cards">
@@ -557,7 +591,7 @@ int main() {
 
 <div id="message" class="message"></div>
 
-<script src="script.js?v=20260926"></script>
+<script src="script.js?v=20261108-blue"></script>
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
