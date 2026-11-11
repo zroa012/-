@@ -67,7 +67,8 @@ function ensureNodeFields(node) {
 knowledge = knowledge.map(ensureNodeFields);
 
 function showPage(id) {
-    if (id !== "study") {
+    // 上网学习期间，站内切页也持续计时；纸质模式沿用离开学习页重置的规则。
+    if (id !== "study" && studyMode === "paper" && (timerRunning || timerFinished)) {
         resetTimer(true);
     }
 
@@ -75,16 +76,16 @@ function showPage(id) {
     const page = document.getElementById(id);
     if (page) page.classList.add("active");
 
-    document.querySelectorAll(".menu button[data-page], .topbar-nav button[data-page], .sidebar-bottom button[data-page]").forEach(button => {
+    document.querySelectorAll(".topbar-nav button[data-page]").forEach(button => {
         button.classList.toggle("active", button.dataset.page === id);
     });
 
     if (id === "study") {
         timerPageActive = true;
         fillStudySelect();
-        const select = document.getElementById("studyId");
-        if (select && select.value) changeStudyNode();
-        else resetTimer(true);
+        // 切回学习页时绝不改变正在进行/已完成的计时状态。
+        renderTimer();
+        setEvaluation(timerFinished);
     }
 
     refresh();
@@ -178,7 +179,7 @@ function resetTimer(silent = false) {
     timerRunning = false;
     timerFinished = false;
     timerEndAt = 0;
-    timerPageActive = document.getElementById("study")?.classList.contains("active") ?? true;
+    timerPageActive = true;
 
     const minutes = getStudyMinutes();
     timerSeconds = minutes * 60;
@@ -208,7 +209,8 @@ function startTimer() {
 
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
-        if (!timerPageActive || !document.getElementById("study")?.classList.contains("active")) {
+        // 允许上网学习时浏览本站任意页面；纸质学习仍遵守原有规则。
+        if (studyMode === "paper" && !document.getElementById("study")?.classList.contains("active")) {
             resetTimer(true);
             return;
         }
@@ -252,7 +254,7 @@ function pauseTimer() {
     timerEndAt = 0;
     unlockSidebarAfterStudy();
     renderTimer();
-    showMessage("倒计时已暂停，侧边栏已恢复");
+    showMessage("倒计时已暂停");
 }
 
 function changeStudyTime() {
@@ -1567,8 +1569,6 @@ function cleanupDuplicateTimers() {
    ========================= */
 
 document.addEventListener("visibilitychange", () => {
-    const studyActive = document.getElementById("study")?.classList.contains("active");
-    if (!studyActive) return;
 
     if (document.hidden) {
         leftBrowserPage = true;
@@ -2242,3 +2242,42 @@ studyTime = function(){
     saveData();
     refresh();
 };
+
+
+/* AI 伴学：仅前端显示和对话逻辑；密钥只在 Cloudflare Pages Function 的环境变量里。 */
+const aiConversation = [];
+let aiBusy = false;
+function setAIQuestion(value) { const el=document.getElementById('aiInput'); if(el){el.value=value;el.focus();} }
+function appendAIMessage(role, text) {
+  const list=document.getElementById('aiMessages');if(!list)return;
+  const node=document.createElement('div');node.className='ai-bubble '+(role==='user'?'user':'assistant');
+  node.textContent=text;list.appendChild(node);list.scrollTop=list.scrollHeight;
+}
+function clearAIChat() {
+  if(aiBusy) return;
+  aiConversation.length=0;
+  const list=document.getElementById('aiMessages');
+  if(list) list.innerHTML='<div class="ai-bubble assistant">对话已清空。可以继续提问啦！</div>';
+  const status=document.getElementById('aiStatus');if(status)status.textContent='已清空本次对话';
+}
+async function askAI(event) {
+  event.preventDefault();if(aiBusy)return;
+  const input=document.getElementById('aiInput'),send=document.getElementById('aiSend'),status=document.getElementById('aiStatus');
+  const question=input?.value.trim();if(!question)return;
+  const messages=aiConversation.slice(-12).concat({role:'user',content:question});
+  appendAIMessage('user',question);input.value='';aiBusy=true;send.disabled=true;status.textContent='AI 老师正在思考…';
+  try {
+    const response=await fetch('./api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages})});
+    let data;try{data=await response.json();}catch{throw new Error('服务端未返回有效结果，请检查是否启用了 Cloudflare Pages Functions。');}
+    if(!response.ok)throw new Error(data.error||'请求失败，请稍后重试。');
+    if(!data.answer||typeof data.answer!=='string')throw new Error('AI 未返回有效内容');
+    aiConversation.push({role:'user',content:question},{role:'assistant',content:data.answer});
+    if(aiConversation.length>12)aiConversation.splice(0,aiConversation.length-12);
+    appendAIMessage('assistant',data.answer);status.textContent='已完成 · 可继续追问';
+  }catch(err){appendAIMessage('assistant','连接失败：'+err.message);status.textContent='连接失败，可重试';input.value=question;}
+  finally{aiBusy=false;send.disabled=false;}
+}
+document.addEventListener('DOMContentLoaded',()=>{
+ const field=document.getElementById('aiInput');
+ field?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();document.getElementById('aiForm')?.requestSubmit();}});
+});

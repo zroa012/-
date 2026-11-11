@@ -9,54 +9,28 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="style.css?v=20261108-blue">
+    <link rel="stylesheet" href="style.css?v=20261111-nav-ai">
 </head>
 <body>
 
 <div class="app">
-
-    <aside class="sidebar">
-        
-        <button id="sidebarToggle" class="sidebar-toggle" title="收起侧边栏">
-    ☰
-</button>
-        
-        <div class="logo">
-            <div class="logo-icon">S</div>
-            <div>
-                <h2>智能学习助手</h2>
-                <p>Smart Study</p>
-            </div>
-        </div>
-
-        <div class="menu" aria-label="主导航">
-            <button data-page="home" class="active" title="首页" onclick="showPage('home')"><span class="nav-icon">⌂</span><span class="nav-label">首页</span></button>
-            <button data-page="knowledge" title="已学知识点" onclick="showPage('knowledge')"><span class="nav-icon">▦</span><span class="nav-label">知识点管理</span></button>
-            <button data-page="study" title="开始学习" onclick="showPage('study')"><span class="nav-icon">◷</span><span class="nav-label">开始学习</span></button>
-            <button data-page="recent" title="今日学习状况" onclick="showPage('recent')"><span class="nav-icon">▤</span><span class="nav-label">学习统计</span></button>
-            <button data-page="wrong" title="错题本" onclick="showPage('wrong')"><span class="nav-icon">✎</span><span class="nav-label">错题本</span></button>
-            <button data-page="weak" title="薄弱知识点" onclick="showPage('weak')"><span class="nav-icon">◉</span><span class="nav-label">薄弱知识点</span></button>
-            <button data-page="code" title="在线编译器" onclick="showPage('code')"><span class="nav-icon">⌘</span><span class="nav-label">在线编译器</span></button>
-            <button data-page="tools" title="更多学习工具" onclick="showPage('tools')"><span class="nav-icon">⚙</span><span class="nav-label">学习工具</span></button>
-        </div>
-
-        <div class="sidebar-bottom">
-            <button class="add-button" onclick="showAdd()"><span class="nav-icon">＋</span><span class="nav-label">添加知识点</span></button>
-            <button class="delete-button" data-page="delete" onclick="showPage('delete')"><span class="nav-icon">⌫</span><span class="nav-label">删除知识点</span></button>
-        </div>
-    </aside>
-
-    <main class="main">
+<main class="main">
         <header class="topbar">
             <div class="topbar-brand">
                 <span class="topbar-mark">S</span>
                 <span>智能学习助手</span>
             </div>
-            <nav class="topbar-nav" aria-label="快捷导航">
-                <button class="top-tab active" data-page="home" onclick="showPage('home')">工作台</button>
-                <button class="top-tab" data-page="knowledge" onclick="showPage('knowledge')">知识管理</button>
-                <button class="top-tab" data-page="tools" onclick="showPage('tools')">学习工具</button>
-            </nav>
+            <nav class="topbar-nav" aria-label="主导航">
+<button class="top-tab active" data-page="home" type="button" onclick="showPage('home')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9"/><path d="M9 21v-7h6v7"/></svg><span>首页</span></button>
+<button class="top-tab " data-page="knowledge" type="button" onclick="showPage('knowledge')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4H5a2 2 0 0 0-2 2z"/><path d="M21 18V5a2 2 0 0 0-2-2h-3a4 4 0 0 0-4 4v14a4 4 0 0 1 4-4h3a2 2 0 0 1 2 2z"/></svg><span>知识管理</span></button>
+<button class="top-tab " data-page="study" type="button" onclick="showPage('study')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6M12 5V2"/></svg><span>开始学习</span></button>
+<button class="top-tab " data-page="recent" type="button" onclick="showPage('recent')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V13h4v7M10 20V9h4v11M16 20V4h4v16"/></svg><span>学习统计</span></button>
+<button class="top-tab " data-page="wrong" type="button" onclick="showPage('wrong')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="15" height="18" rx="2"/><path d="M8 3v18M11 8h6M11 12h4M11 17l3-3 2 2-3 3-2 .5z"/></svg><span>错题本</span></button>
+<button class="top-tab " data-page="weak" type="button" onclick="showPage('weak')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>薄弱知识</span></button>
+<button class="top-tab " data-page="code" type="button" onclick="showPage('code')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 8-4 4 4 4m8-8 4 4-4 4M14 5l-4 14"/></svg><span>在线编译</span></button>
+<button class="top-tab " data-page="tools" type="button" onclick="showPage('tools')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>学习工具</span></button>
+<button class="top-tab " data-page="ai" type="button" onclick="showPage('ai')"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 3v4M9 3h6M8 14h.01M16 14h.01M9 18h6"/></svg><span>AI伴学</span></button>
+</nav>
             <div class="topbar-actions">
                 <button class="topbar-export" type="button" onclick="exportStudyData()">↓ 导出数据</button>
                 <button class="topbar-add" type="button" onclick="showAdd()">＋ 添加知识点</button>
@@ -75,17 +49,17 @@
 
             <div class="quick-actions">
                 <button class="quick-card" type="button" onclick="showPage('study')">
-                    <span class="quick-icon">◷</span>
+                    <span class="quick-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6M12 5V2"/></svg></span>
                     <span class="quick-copy"><strong>开始专注学习</strong><small>选择知识点，开启专注计时</small></span>
                     <span class="quick-arrow">→</span>
                 </button>
                 <button class="quick-card" type="button" onclick="showPage('knowledge')">
-                    <span class="quick-icon">▦</span>
+                    <span class="quick-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4H5a2 2 0 0 0-2 2z"/><path d="M21 18V5a2 2 0 0 0-2-2h-3a4 4 0 0 0-4 4v14a4 4 0 0 1 4-4h3a2 2 0 0 1 2 2z"/></svg></span>
                     <span class="quick-copy"><strong>整理知识体系</strong><small>查看掌握程度与学习记录</small></span>
                     <span class="quick-arrow">→</span>
                 </button>
                 <button class="quick-card" type="button" onclick="showPage('tools')">
-                    <span class="quick-icon">⌘</span>
+                    <span class="quick-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg></span>
                     <span class="quick-copy"><strong>打开学习工具</strong><small>使用计算器、函数图像与画板</small></span>
                     <span class="quick-arrow">→</span>
                 </button>
@@ -514,6 +488,20 @@ int main() {
             </div>
         </div>
 
+
+        <div id="ai" class="page">
+            <div class="page-title"><div><h1>AI 伴学</h1><p>你的专属学习老师 · DeepSeek-V4.1-Flash-1017</p></div></div>
+            <div class="ai-layout">
+              <section class="panel ai-panel">
+                <div class="ai-head"><span class="ai-avatar"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 3v4M9 3h6M8 14h.01M16 14h.01M9 18h6"/></svg></span><div><strong>AI 学习老师</strong><small>先理解思路，再掌握方法</small></div><span class="ai-model">DeepSeek Flash</span></div>
+                <div id="aiMessages" class="ai-messages" role="log" aria-live="polite"><div class="ai-bubble assistant">你好！我是你的 AI 伴学老师。数学、英语、编程、理科等学习问题都可以问我。我会尽量分步骤讲解，也可以只给你提示。</div></div>
+                <div class="ai-suggestions"><button type="button" onclick="setAIQuestion('请用简单的例子解释二次函数的顶点式')">讲解知识点</button><button type="button" onclick="setAIQuestion('请帮我分析这道题的解题思路，我稍后提供题目')">分析解题思路</button><button type="button" onclick="setAIQuestion('给我设计一道适合练习的题目，并在我回答后批改')">出题练习</button><button type="button" onclick="setAIQuestion('请用苏格拉底式提问引导我学习，不要直接告诉我答案')">启发式教学</button></div>
+                <form class="ai-compose" id="aiForm" onsubmit="askAI(event)"><textarea id="aiInput" placeholder="输入你的学习问题……（Enter 发送，Shift+Enter 换行）" rows="3" maxlength="6000" aria-label="向AI老师提问"></textarea><div class="ai-compose-actions"><span id="aiStatus">需在 Cloudflare 设置 DEEPSEEK_API_KEY 后启用</span><button id="aiSend" class="primary" type="submit">发送提问</button></div></form>
+              </section>
+              <aside class="ai-info panel"><h2>让 AI 帮你真正学会</h2><p>讲解概念、引导解题、分析代码、检查思路。学习过程中提问，不影响上网学习倒计时。</p><div class="ai-info-tip"><strong>隐私提示</strong><p>问题会通过你的网站服务端发送给 DeepSeek。请勿输入密码或个人敏感信息。</p></div><button type="button" class="secondary" onclick="clearAIChat()">清空本次对话</button></aside>
+            </div>
+        </div>
+
         <div id="delete" class="page">
             <div class="page-title">
                 <h1>删除知识点</h1>
@@ -591,7 +579,7 @@ int main() {
 
 <div id="message" class="message"></div>
 
-<script src="script.js?v=20261108-blue"></script>
+<script src="script.js?v=20261111-nav-ai"></script>
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
