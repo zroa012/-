@@ -1,9 +1,9 @@
-const CACHE_NAME = 'smart-study-v13-blue';
+const CACHE_NAME = 'smart-study-budget-v1';
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=20261108-blue",
-  "./script.js?v=20261108-blue",
+  "./style.css?v=20261111-budget-1",
+  "./script.js?v=20261111-budget-1",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

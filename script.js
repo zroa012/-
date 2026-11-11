@@ -2269,15 +2269,43 @@ async function askAI(event) {
   try {
     const response=await fetch('./api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages})});
     let data;try{data=await response.json();}catch{throw new Error('服务端未返回有效结果，请检查是否启用了 Cloudflare Pages Functions。');}
+    if(data.usage) renderAIUsage(data.usage);
     if(!response.ok)throw new Error(data.error||'请求失败，请稍后重试。');
     if(!data.answer||typeof data.answer!=='string')throw new Error('AI 未返回有效内容');
     aiConversation.push({role:'user',content:question},{role:'assistant',content:data.answer});
     if(aiConversation.length>12)aiConversation.splice(0,aiConversation.length-12);
     appendAIMessage('assistant',data.answer);status.textContent='已完成 · 可继续追问';
   }catch(err){appendAIMessage('assistant','连接失败：'+err.message);status.textContent='连接失败，可重试';input.value=question;}
-  finally{aiBusy=false;send.disabled=false;}
+  finally{aiBusy=false;send.disabled=false;loadAIUsage();}
 }
 document.addEventListener('DOMContentLoaded',()=>{
  const field=document.getElementById('aiInput');
  field?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();document.getElementById('aiForm')?.requestSubmit();}});
 });
+
+/* AI 每日预算：读取服务端 D1 统计，页面刷新不影响额度 */
+function renderAIUsage(usage) {
+  if (!usage) return;
+  const put=(id,val)=>{const el=document.getElementById(id); if(el)el.textContent=val;};
+  const spent=Number(usage.estimatedSpent||0),remain=Number(usage.remaining||0);
+  put('aiBudgetDate',usage.date+' · 北京时间');
+  put('aiBudgetSpent','¥'+spent.toFixed(4));
+  put('aiBudgetRemaining','¥'+remain.toFixed(4));
+  put('aiBudgetRequests',String(usage.requests||0));
+  const progress=Math.max(0,Math.min(100,spent*100));
+  const fill=document.getElementById('aiBudgetFill');if(fill)fill.style.width=progress+'%';
+  const bar=document.getElementById('aiBudgetBar');if(bar)bar.setAttribute('aria-valuenow',String(spent));
+  put('aiBudgetNotice', usage.note || '每日额度为¥1，次日北京时间零点重置。');
+}
+async function loadAIUsage(){
+  try {
+    const r=await fetch('./api/ai/usage',{cache:'no-store'});
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'读取失败');
+    renderAIUsage(data.usage);
+  } catch(err) {
+    const el=document.getElementById('aiBudgetNotice');
+    if(el)el.textContent='额度暂不可用：'+err.message;
+  }
+}
+document.addEventListener('DOMContentLoaded',loadAIUsage);

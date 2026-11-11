@@ -9,7 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="style.css?v=20261111-nav-ai">
+    <link rel="stylesheet" href="style.css?v=20261111-budget-1">
 </head>
 <body>
 
@@ -498,7 +498,16 @@ int main() {
                 <div class="ai-suggestions"><button type="button" onclick="setAIQuestion('请用简单的例子解释二次函数的顶点式')">讲解知识点</button><button type="button" onclick="setAIQuestion('请帮我分析这道题的解题思路，我稍后提供题目')">分析解题思路</button><button type="button" onclick="setAIQuestion('给我设计一道适合练习的题目，并在我回答后批改')">出题练习</button><button type="button" onclick="setAIQuestion('请用苏格拉底式提问引导我学习，不要直接告诉我答案')">启发式教学</button></div>
                 <form class="ai-compose" id="aiForm" onsubmit="askAI(event)"><textarea id="aiInput" placeholder="输入你的学习问题……（Enter 发送，Shift+Enter 换行）" rows="3" maxlength="6000" aria-label="向AI老师提问"></textarea><div class="ai-compose-actions"><span id="aiStatus">需在 Cloudflare 设置 DEEPSEEK_API_KEY 后启用</span><button id="aiSend" class="primary" type="submit">发送提问</button></div></form>
               </section>
-              <aside class="ai-info panel"><h2>让 AI 帮你真正学会</h2><p>讲解概念、引导解题、分析代码、检查思路。学习过程中提问，不影响上网学习倒计时。</p><div class="ai-info-tip"><strong>隐私提示</strong><p>问题会通过你的网站服务端发送给 DeepSeek。请勿输入密码或个人敏感信息。</p></div><button type="button" class="secondary" onclick="clearAIChat()">清空本次对话</button></aside>
+              <aside class="ai-info panel">
+                <section class="ai-budget" aria-label="AI 每日使用额度">
+                  <div class="ai-budget-title"><strong>今日 AI 使用量</strong><span id="aiBudgetDate">北京时间</span></div>
+                  <div class="ai-budget-total"><strong id="aiBudgetSpent">--</strong><span> / ¥1.00</span></div>
+                  <div class="ai-budget-bar" role="progressbar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" id="aiBudgetBar"><div id="aiBudgetFill"></div></div>
+                  <div class="ai-budget-meta"><span>剩余额度 <strong id="aiBudgetRemaining">--</strong></span><span>今日 <strong id="aiBudgetRequests">--</strong> 次</span></div>
+                  <p id="aiBudgetNotice" class="ai-budget-note">正在获取额度…</p>
+                  <button class="secondary ai-budget-refresh" type="button" onclick="loadAIUsage()">刷新统计</button>
+                </section>
+                <h2>让 AI 帮你真正学会</h2><p>讲解概念、引导解题、分析代码、检查思路。学习过程中提问，不影响上网学习倒计时。</p><div class="ai-info-tip"><strong>隐私提示</strong><p>问题会通过你的网站服务端发送给 DeepSeek。请勿输入密码或个人敏感信息。</p></div><button type="button" class="secondary" onclick="clearAIChat()">清空本次对话</button></aside>
             </div>
         </div>
 
@@ -579,7 +588,7 @@ int main() {
 
 <div id="message" class="message"></div>
 
-<script src="script.js?v=20261111-nav-ai"></script>
+<script src="script.js?v=20261111-budget-1"></script>
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
