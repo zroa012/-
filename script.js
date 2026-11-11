@@ -2251,7 +2251,13 @@ function setAIQuestion(value) { const el=document.getElementById('aiInput'); if(
 function appendAIMessage(role, text) {
   const list=document.getElementById('aiMessages');if(!list)return;
   const node=document.createElement('div');node.className='ai-bubble '+(role==='user'?'user':'assistant');
-  node.textContent=text;list.appendChild(node);list.scrollTop=list.scrollHeight;
+  if(role==='assistant' && typeof window.renderStudyMarkdown==='function') {
+    node.classList.add('ai-markdown');
+    node.innerHTML=window.renderStudyMarkdown(text);
+  } else {
+    node.textContent=text;
+  }
+  list.appendChild(node);list.scrollTop=list.scrollHeight;
 }
 function clearAIChat() {
   if(aiBusy) return;
