@@ -1,23 +1,20 @@
-# 智能学习助手 · 顶部导航与 AI 伴学改版
+# AI伴学 · Cloudflare Pages 上传修复说明
 
-## 本次改动
-- 移除左侧导航栏，将所有原页面入口集中到顶部导航（横向滚动适配手机）。
-- 使用统一线性 SVG 图标替代特殊字符图标。
-- 上网学习跨网站内部页面、浏览器标签页时持续倒计时；回到学习页显示原计时和完成评价。纸质学习的离开重置逻辑保持不变。
-- 新增「AI伴学」页面：连续追问、启发式教学、问题提示、清空对话；对话仅在当前页面内存保存。
-- 现有知识管理、学习评价、复习算法、错题管理、数据备份等均保留。
+## 为什么之前会失败？
+在 Cloudflare 网页端拖拽上传 ZIP/文件夹时，`functions/` 目录不会被编译，导致 `/api/ai` 接口不存在。新版改为项目根目录的 `_worker.js`，Cloudflare Pages 官方支持通过网页拖拽上传这一文件。
 
-## AI 必须配置后才能回答
-模型为 DeepSeek-V4.1-Flash-1017，官方 API 标识为 `deepseek-flash`（该标识可能随官方模型升级指向新版）。模型开源不等于远程 API 免费，使用官方接口需要 DeepSeek API Key 及可用额度。
+## 按顺序操作
+1. 在原网站内先导出学习数据备份（以防万一）。
+2. 打开 Cloudflare → Workers & Pages → 你当前的 Pages 项目 → Deployments / 部署。
+3. 创建一个新的 Production / 生产环境部署，使用拖拽上传方式上传本 ZIP 文件；若要求上传文件夹，先解压，把包含 `index.html`、`_worker.js` 的根目录上传。不要多套一层目录。
+4. Cloudflare → Settings → Variables and Secrets，确认生产环境有 Secret 变量 `DEEPSEEK_API_KEY`，它的值是你从 DeepSeek 官方平台取得的 API 密钥（不要上传到聊天或 GitHub）。新密钥配置需要后续部署生效。
+5. 部署完成后，直接浏览器访问 `https://zhixue-bix.pages.dev/api/ai`：若显示 JSON 格式的 `仅支持 POST 提问`，表示 API 路由已经生效；若显示 HTML 网页或 404，表示 worker 没部署成功。
+6. 回到网站，用 AI 伴学提问。如果报出上游服务故障，需检查 API 密钥、余额、模型名/API 是否可用；不要把密钥贴给任何人。
 
-1. 把压缩包内的文件及 `functions/api/ai.js` 目录一起上传到 GitHub 仓库根目录。
-2. Cloudflare Dashboard → Workers & Pages → 对应 Pages 项目 → Settings → Variables and Secrets，增加 `DEEPSEEK_API_KEY`，值为你的 DeepSeek API Key，选择 **Secret/Encrypt**；生产环境务必设置，预览环境按需设置。
-3. 重新部署 Cloudflare Pages（确保项目是支持 Pages Functions 的部署方式）。
-4. 访问网站的「AI伴学」提问。没有配置密钥会提示错误，不会假装已经连通。
-5. **不要**把 API Key 写进 HTML、浏览器 JavaScript、GitHub 源码或 `wrangler.toml` 的明文字段。
+## 文件说明
+- `_worker.js` 为服务端 AI 代理，密钥仅从 Cloudflare 环境变量读取。其他页面由 `env.ASSETS.fetch` 原样提供。
+- 原 HTML/CSS/JS/学习算法、计时逻辑不变。
+- 当前上游模型调用标识沿用上一版 `deepseek-flash`，实际能否通过 API 调用取决于所使用平台当前支持的模型名称，不能凭此保证指定型号。
+- 公共网站可能被其他人调用 API 消耗余额，请配置访问限制/请求频率限制和用量预算。
 
-## 使用成本和安全
-- 官方 API 属于按使用量计费，不因模型开源而自动免费。
-- 公共网站任何访客可能调用 `/api/ai` 产生费用。正式开放前建议启用 Cloudflare WAF 速率限制、Turnstile、身份认证/配额，监控 DeepSeek 用量。当前实现有基本消息大小限制，并非完整防滥用方案。
-- `/api/ai` 只有部署到 Cloudflare Pages（或兼容 Pages Functions 的平台）后才能正常运行。直接打开本地 HTML 只会显示界面。
-- 浏览器学习记录仍存放于 `localStorage`。更新页面前建议导出备份。
+官方参考：https://developers.cloudflare.com/pages/get-started/direct-upload/
