@@ -1900,3 +1900,22 @@ body.study-lock-sidebar .main { margin-left: 0; width: 100%; }
 .ai-markdown blockquote p{margin:0}.ai-markdown hr{border:0;border-top:1px solid #D0E3FF;margin:15px 0}
 .ai-markdown .ai-math{overflow-x:auto;white-space:pre-wrap;font:14px/1.8 Consolas,monospace;background:#F9FCFF;padding:10px;border-radius:8px}
 @media(max-width:650px){.ai-bubble.ai-markdown{max-width:100%;}.ai-markdown pre.ai-code{padding:12px 10px}}
+
+/* MathJax LaTeX 数学公式样式 */
+.ai-markdown .ai-math-display{display:block;max-width:100%;overflow-x:auto;overflow-y:hidden;margin:12px 0;text-align:center;padding:6px 2px}
+.ai-markdown .ai-math-inline{display:inline}
+.ai-markdown mjx-container[jax="SVG"][display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;margin:.6em 0}
+.ai-markdown mjx-container svg{max-width:none}
+
+/* AI baseline diagnostic and wrong-question tutor */
+.baseline-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.baseline-actions button{min-width:0;padding:12px 8px;font-size:13px}
+.baseline-hint,.ai-chat-save-hint{font-size:12px;color:#586987;line-height:1.6;margin:9px 0}
+.baseline-quiz.hidden{display:none}
+.baseline-quiz{max-height:42vh;overflow:auto;border-top:1px solid #dbe6f3;margin-top:14px;padding-top:8px}
+.baseline-question{margin:10px 0 16px;border:1px solid #dde7f5;border-radius:12px;padding:12px}
+.baseline-question legend{font-weight:650;color:#081F5C;line-height:1.6;padding:0 6px}
+.baseline-option{display:flex;align-items:start;gap:9px;cursor:pointer;border-radius:8px;padding:8px 5px;font-size:14px;line-height:1.5}
+.baseline-option:hover{background:#E7F1FF}.baseline-option input{margin-top:4px;flex:none}
+.wrong-ai-actions{display:flex;align-items:center;gap:8px}.wrong-ai-actions .secondary{font-size:12px;padding:6px 10px}
+@media(max-width:520px){.baseline-actions{grid-template-columns:1fr}.wrong-ai-actions{flex-wrap:wrap}}

@@ -2175,7 +2175,7 @@ function renderWrongQuestionsEnhanced(){
     if(count)count.textContent=`${wrongQuestions.length} 道错题`;
     if(!el)return;
     if(!wrongQuestions.length){el.innerHTML='<div class="empty">还没有错题。完成学习后，如果有错题可以直接记录到这里。</div>';renderWrongCauseStats();return;}
-    el.innerHTML=wrongQuestions.map(q=>`<div class="wrong-item"><div class="wrong-item-head"><div><div class="item-title">${escapeHtml(q.knowledgeName)}</div><div class="item-sub">${escapeHtml(q.subject)} · ${escapeHtml(q.date)} · ${getWrongCauseLabel(q.cause)}</div></div><button class="delete-btn" onclick="deleteWrongQuestion('${String(q.id)}')">删除</button></div><div class="wrong-content"><strong>题目：</strong>${escapeHtml(q.content)}</div>${q.mistake?`<div class="wrong-content"><strong>我的错误：</strong>${escapeHtml(q.mistake)}</div>`:""}${q.answer?`<div class="wrong-content"><strong>正确答案 / 解析：</strong>${escapeHtml(q.answer)}</div>`:""}</div>`).join("");
+    el.innerHTML=wrongQuestions.map(q=>`<div class="wrong-item"><div class="wrong-item-head"><div><div class="item-title">${escapeHtml(q.knowledgeName)}</div><div class="item-sub">${escapeHtml(q.subject)} · ${escapeHtml(q.date)} · ${getWrongCauseLabel(q.cause)}</div></div><div class="wrong-ai-actions"><button class="secondary" type="button" onclick="explainWrongWithAI('${String(q.id)}')">AI老师讲错题</button><button class="delete-btn" onclick="deleteWrongQuestion('${String(q.id)}')">删除</button></div></div><div class="wrong-content"><strong>题目：</strong>${escapeHtml(q.content)}</div>${q.mistake?`<div class="wrong-content"><strong>我的错误：</strong>${escapeHtml(q.mistake)}</div>`:""}${q.answer?`<div class="wrong-content"><strong>正确答案 / 解析：</strong>${escapeHtml(q.answer)}</div>`:""}</div>`).join("");
     renderWrongCauseStats();
 }
 
@@ -2245,7 +2245,19 @@ studyTime = function(){
 
 
 /* AI 伴学：仅前端显示和对话逻辑；密钥只在 Cloudflare Pages Function 的环境变量里。 */
-const aiConversation = [];
+// Chat messages are stored only in this browser, not in D1 or DeepSeek's database.
+const AI_CHAT_KEY='smartStudyAIChat_v2';
+function loadSavedAIChat(){
+  try {
+    const data=JSON.parse(localStorage.getItem(AI_CHAT_KEY)||'[]');
+    return Array.isArray(data) ? data.filter(m=>m && ['user','assistant'].includes(m.role) && typeof m.content==='string').slice(-50) : [];
+  } catch {return [];}
+}
+const aiConversation = loadSavedAIChat();
+function persistAIChat(){
+  try{localStorage.setItem(AI_CHAT_KEY,JSON.stringify(aiConversation.slice(-50)));}
+  catch(e){console.warn('本地保存对话失败',e);}
+}
 let aiBusy = false;
 function setAIQuestion(value) { const el=document.getElementById('aiInput'); if(el){el.value=value;el.focus();} }
 function appendAIMessage(role, text) {
@@ -2254,6 +2266,10 @@ function appendAIMessage(role, text) {
   if(role==='assistant' && typeof window.renderStudyMarkdown==='function') {
     node.classList.add('ai-markdown');
     node.innerHTML=window.renderStudyMarkdown(text);
+    // 公式从本站加载的 MathJax 渲染；只渲染新增 AI 消息。
+    if(window.MathJax && typeof window.MathJax.typesetPromise==='function') {
+      window.MathJax.typesetPromise([node]).catch(err => console.warn('数学公式渲染失败',err));
+    }
   } else {
     node.textContent=text;
   }
@@ -2261,7 +2277,8 @@ function appendAIMessage(role, text) {
 }
 function clearAIChat() {
   if(aiBusy) return;
-  aiConversation.length=0;
+  if(!confirm('确定清空本机保存的 AI 聊天记录吗？'))return;
+  aiConversation.length=0;persistAIChat();
   const list=document.getElementById('aiMessages');
   if(list) list.innerHTML='<div class="ai-bubble assistant">对话已清空。可以继续提问啦！</div>';
   const status=document.getElementById('aiStatus');if(status)status.textContent='已清空本次对话';
@@ -2279,12 +2296,17 @@ async function askAI(event) {
     if(!response.ok)throw new Error(data.error||'请求失败，请稍后重试。');
     if(!data.answer||typeof data.answer!=='string')throw new Error('AI 未返回有效内容');
     aiConversation.push({role:'user',content:question},{role:'assistant',content:data.answer});
-    if(aiConversation.length>12)aiConversation.splice(0,aiConversation.length-12);
+    if(aiConversation.length>50)aiConversation.splice(0,aiConversation.length-50);
+    persistAIChat();
     appendAIMessage('assistant',data.answer);status.textContent='已完成 · 可继续追问';
   }catch(err){appendAIMessage('assistant','连接失败：'+err.message);status.textContent='连接失败，可重试';input.value=question;}
   finally{aiBusy=false;send.disabled=false;loadAIUsage();}
 }
 document.addEventListener('DOMContentLoaded',()=>{
+  if(aiConversation.length){
+    const list=document.getElementById('aiMessages');if(list)list.innerHTML='';
+    aiConversation.forEach(m=>appendAIMessage(m.role,m.content));
+  }
  const field=document.getElementById('aiInput');
  field?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();document.getElementById('aiForm')?.requestSubmit();}});
 });
@@ -2315,3 +2337,88 @@ async function loadAIUsage(){
   }
 }
 document.addEventListener('DOMContentLoaded',loadAIUsage);
+
+
+/* 新知识点 AI 入门测评：独立评估，不修改原学习评价和复习算法。 */
+let baselineQuiz=null;
+function showBaselineStatus(message,alert=false){
+  const el=document.getElementById('baselineStatus');if(el){el.textContent=message;el.style.color=alert?'#ae3544':'#59677f';}
+}
+async function requestAIAssessment(subject,name){
+  // No private learning data is attached; user explicitly initiates this API call.
+  const prompt=`请作为${subject}学科教师，为知识点“${name}”生成4道简短、有区分度的入门诊断单选题（覆盖基础理解、方法、应用、易错点）。必须只输出严格JSON，不要Markdown或代码围栏。格式：{"questions":[{"question":"题干","options":["选项A内容","选项B内容","选项C内容","选项D内容"],"correctIndex":0,"explanation":"为什么该项正确，简短"}]}。必须恰好4题、每题四个不重复选项，correctIndex为0~3整数；每题只有一个正确选项；不需要包含真实姓名。总共尽量少于700字。`;
+  const r=await fetch('./api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
+  const data=await r.json().catch(()=>({error:'服务端没有返回有效 JSON'}));
+  loadAIUsage();
+  if(!r.ok)throw new Error(data.error||'AI 出题失败');
+  if(typeof data.answer!=='string')throw new Error('AI 未返回题目');
+  const raw=data.answer.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+  let parsed;
+  try{parsed=JSON.parse(raw);}catch{throw new Error('AI 返回的试题格式错误，请重试生成。');}
+  if(!Array.isArray(parsed.questions)||parsed.questions.length!==4)throw new Error('题目数量异常，请重新出题。');
+  parsed.questions.forEach(q=>{
+    if(typeof q.question!=='string'||!q.question.trim()||q.question.length>1000||
+      !Array.isArray(q.options)||q.options.length!==4||
+      q.options.some(v=>typeof v!=='string'||!v.trim()||v.length>500)||
+      new Set(q.options.map(x=>x.trim())).size!==4||
+      !Number.isInteger(q.correctIndex)||q.correctIndex<0||q.correctIndex>3||
+      typeof q.explanation!=='string')throw new Error('有题目格式不符合要求，请重新生成。');
+  });
+  return parsed.questions;
+}
+async function startBaselineAssessment(){
+  if(baselineQuiz?.loading)return;
+  const subject=document.getElementById('addSubject')?.value.trim();
+  const name=document.getElementById('addKnowledge')?.value.trim();
+  if(!subject||!name){showBaselineStatus('请先填写科目和知识点。',true);return;}
+  const btn=document.getElementById('baselineStart');
+  if(btn)btn.disabled=true;
+  baselineQuiz={loading:true};
+  showBaselineStatus('AI 正在生成4道诊断题，会计入每日AI额度…');
+  try{
+    const questions=await requestAIAssessment(subject,name);
+    baselineQuiz={subject,name,questions};
+    document.getElementById('baselineQuiz')?.classList.remove('hidden');
+    renderBaselineQuiz();
+    showBaselineStatus('请独立作答，提交后根据结果设置初始熟练度。AI 出题及判分可能有误。');
+  }catch(e){baselineQuiz=null;showBaselineStatus(e.message||'出题失败',true);}
+  finally{if(btn)btn.disabled=false;}
+}
+function renderBaselineQuiz(){
+  const el=document.getElementById('baselineQuiz');if(!el||!baselineQuiz?.questions)return;
+  el.innerHTML=baselineQuiz.questions.map((q,i)=>`<fieldset class="baseline-question"><legend>${i+1}. ${escapeHtml(q.question)}</legend>${q.options.map((v,j)=>`<label class="baseline-option"><input type="radio" name="baselineQ${i}" value="${j}"><span>${'ABCD'[j]}. ${escapeHtml(v)}</span></label>`).join('')}</fieldset>`).join('')+'<button class="primary big" type="button" onclick="finishBaselineAssessment()">提交测评并创建知识点</button>';
+}
+function finishBaselineAssessment(){
+  if(!baselineQuiz?.questions)return;
+  const {questions,subject,name}=baselineQuiz;
+  if(document.getElementById('addSubject')?.value.trim()!==subject||document.getElementById('addKnowledge')?.value.trim()!==name){
+    showBaselineStatus('知识点名称已改变，请重新生成对应测评。',true);return;
+  }
+  const answers=questions.map((q,i)=>document.querySelector(`input[name="baselineQ${i}"]:checked`)?.value);
+  if(answers.some(v=>v===undefined)){showBaselineStatus('请答完全部4道题。',true);return;}
+  const correct=answers.reduce((sum,v,i)=>sum+(Number(v)===questions[i].correctIndex?1:0),0);
+  // 仅作为首次诊断估计，不冒充正式学习记录；不影响复习算法。
+  const baseline=[10,30,50,70,90][correct];
+  const oldIds=new Set(knowledge.map(n=>String(n.id)));
+  addNode();
+  const created=knowledge.find(n=>!oldIds.has(String(n.id)));
+  if(!created){showBaselineStatus('创建失败，请检查输入内容。',true);return;}
+  created.proficiency=baseline;
+  created.baselineAssessment={correct,total:4,estimatedProficiency:baseline,assessedAt:new Date().toISOString(),items:questions.map((q,i)=>({question:q.question,options:q.options,correctIndex:q.correctIndex,answerIndex:Number(answers[i]),explanation:q.explanation}))};
+  // 诊断熟练度越高初次复习可稍后；此后依旧按原学习算法运行。
+  const delay=correct>=3?3:correct===2?2:1;
+  const date=new Date();date.setDate(date.getDate()+delay);
+  created.nextReview=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  saveData();refresh();fillStudySelect();
+  baselineQuiz=null;document.getElementById('baselineQuiz')?.classList.add('hidden');
+  showMessage(`初始诊断：答对${correct}/4，熟练度估计${baseline}%。`);
+  const detail=questions.map((q,i)=>`${i+1}. ${answers[i]==q.correctIndex?'正确':'待巩固'}：${q.explanation}`).join('\n');
+  alert(`已添加“${name}”\n答对 ${correct}/4 题，初始熟练度估计 ${baseline}%\n\n${detail}\n\n测评仅用于初始诊断，不能替代正式考试或老师评估。`);
+}
+function explainWrongWithAI(id){
+  const q=wrongQuestions.find(x=>String(x.id)===String(id));if(!q){showMessage('错题已不存在');return;}
+  showPage('ai');
+  setAIQuestion(`请针对下面这道错题给我分步讲解：先找核心知识点和错误原因，再提示解题思路、逐步推导正确答案，最后给出一道相似练习并等我作答。\n学科：${q.subject||'未分类'}\n知识点：${q.knowledgeName||'未指定'}\n错题：${q.content||''}\n我做错的地方：${q.mistake||'未填写'}\n原记录答案：${q.answer||'未填写'}\n请不要假设原记录答案一定正确。`);
+  document.getElementById('aiInput')?.focus();
+  showMessage('已把错题放入AI提问框，点击发送开始讲解');
+}
