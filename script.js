@@ -2510,10 +2510,89 @@ function initGraphKeypad(){
         else if(btn.hasAttribute('data-graph-template'))graphInsertText(btn.dataset.graphTemplate,true);
     });
 }
-function openEmbeddedLab(){
-    const panel=document.getElementById('onlineLabPanel'),frame=document.getElementById('onlineLabFrame');
-    if(!panel||!frame)return;
-    panel.hidden=!panel.hidden;
-    if(!panel.hidden&&!frame.src)frame.src='https://wl.nobook.com/console/templates/resource?grade_id=2';
-}
 document.addEventListener('DOMContentLoaded',()=>initGraphKeypad());
+
+
+/* v8 原生物理实验：独立于学习记录和 AI 计费逻辑 */
+const nativeLabState = {type:'pendulum',running:false,elapsed:0,lastStamp:0,raf:0,scale:1,
+  pendulum:{length:1.5,gravity:9.8,angle:20},
+  projectile:{speed:16,angle:45,gravity:9.8},
+  circuit:{voltage:6,resistance:10}};
+const nativeLabFields={
+  pendulum:[['length','摆长','m',0.5,3,0.1],['gravity','重力加速度','m/s²',1,20,0.2],['angle','初始摆角','°',5,40,1]],
+  projectile:[['speed','初速度','m/s',3,30,1],['angle','抛射角','°',10,80,1],['gravity','重力加速度','m/s²',1,20,0.2]],
+  circuit:[['voltage','电压','V',1,24,1],['resistance','电阻','Ω',1,50,1]]
+};
+function stopNativeLab(){const s=nativeLabState;s.running=false;s.lastStamp=0;if(s.raf)cancelAnimationFrame(s.raf);s.raf=0;const b=document.getElementById('nativeLabPlay');if(b)b.textContent='开始实验';}
+function setNativeLab(type){
+ if(!nativeLabFields[type])return;
+ stopNativeLab();nativeLabState.type=type;nativeLabState.elapsed=0;
+ document.querySelectorAll('[data-lab]').forEach(b=>{const active=b.dataset.lab===type;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
+ const box=document.getElementById('nativeLabControls');if(!box)return;
+ box.innerHTML=nativeLabFields[type].map(([key,label,unit,min,max,step])=>`<label class="native-lab-control"><span>${label}<strong data-lab-value="${key}">${nativeLabState[type][key]} ${unit}</strong></span><input type="range" min="${min}" max="${max}" step="${step}" value="${nativeLabState[type][key]}" data-lab-input="${key}" aria-label="${label}"></label>`).join('');
+ drawNativeLab();
+}
+function resetNativeLab(){stopNativeLab();nativeLabState.elapsed=0;drawNativeLab();}
+function toggleNativeLab(){
+ const s=nativeLabState;if(s.running){stopNativeLab();return;}
+ if(s.type==='projectile'){const p=s.projectile,T=2*p.speed*Math.sin(p.angle*Math.PI/180)/p.gravity;if(s.elapsed>=T)s.elapsed=0;}
+ s.running=true;s.lastStamp=0;document.getElementById('nativeLabPlay').textContent='暂停实验';
+ const frame=stamp=>{if(!s.running)return;if(s.lastStamp)s.elapsed+=Math.min((stamp-s.lastStamp)/1000,.07);s.lastStamp=stamp;
+   if(s.type==='projectile'){const p=s.projectile,T=2*p.speed*Math.sin(p.angle*Math.PI/180)/p.gravity;if(s.elapsed>=T){s.elapsed=T;drawNativeLab();stopNativeLab();return;}}
+   drawNativeLab();s.raf=requestAnimationFrame(frame);
+ };s.raf=requestAnimationFrame(frame);
+}
+function drawNativeLab(){
+ const canvas=document.getElementById('nativeLabCanvas');if(!canvas)return;
+ const w=Math.max(270,Math.round(canvas.getBoundingClientRect().width||550)),h=320,dpr=Math.min(devicePixelRatio||1,2);
+ if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}
+ const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ ctx.fillStyle='#f7faff';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#dce6f5';ctx.lineWidth=1;
+ for(let x=0;x<w;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+ for(let y=0;y<h;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+ const s=nativeLabState,p=s[s.type],t=s.elapsed;let summary='';
+ ctx.lineCap='round';ctx.lineJoin='round';ctx.font='13px system-ui,sans-serif';ctx.fillStyle='#243e71';
+ if(s.type==='pendulum'){
+   const ox=w/2,oy=35,len=Math.min(225,p.length*95),theta=p.angle*Math.PI/180*Math.cos(Math.sqrt(p.gravity/p.length)*t);
+   const bx=ox+len*Math.sin(theta),by=oy+len*Math.cos(theta);
+   ctx.strokeStyle='#adc5e7';ctx.beginPath();ctx.arc(ox,oy,len,Math.PI/2-theta-Math.abs(p.angle*Math.PI/180),Math.PI/2+Math.abs(p.angle*Math.PI/180));ctx.stroke();
+   ctx.strokeStyle='#334EAC';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(bx,by);ctx.stroke();
+   ctx.fillStyle='#081F5C';ctx.beginPath();ctx.arc(ox,oy,6,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#7096D1';ctx.beginPath();ctx.arc(bx,by,16,0,Math.PI*2);ctx.fill();
+   const T=2*Math.PI*Math.sqrt(p.length/p.gravity);summary=`理论周期（小角度近似）：${T.toFixed(2)} s　当前摆角：${(theta*180/Math.PI).toFixed(1)}°　经过：${t.toFixed(1)} s`;
+ }else if(s.type==='projectile'){
+   const rad=p.angle*Math.PI/180,vx=p.speed*Math.cos(rad),vy=p.speed*Math.sin(rad),T=2*vy/p.gravity,R=vx*T,H=vy*vy/(2*p.gravity);
+   const scale=Math.min((w-74)/Math.max(R,1),(h-75)/Math.max(H,1),80),ox=36,oy=h-33;
+   ctx.strokeStyle='#526c98';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,oy);ctx.lineTo(w-12,oy);ctx.stroke();
+   ctx.beginPath();ctx.strokeStyle='#9eb7df';ctx.setLineDash([5,4]);
+   for(let i=0;i<=100;i++){const ti=T*i/100,x=ox+vx*ti*scale,y=oy-(vy*ti-0.5*p.gravity*ti*ti)*scale;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+   ctx.stroke();ctx.setLineDash([]);
+   const current=Math.min(t,T),x=ox+vx*current*scale,y=oy-(vy*current-.5*p.gravity*current*current)*scale;
+   ctx.fillStyle='#334EAC';ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fill();
+   summary=`射程：${R.toFixed(2)} m　最大高度：${H.toFixed(2)} m　飞行时间：${T.toFixed(2)} s　当前：${current.toFixed(1)} s`;
+ }else{
+   const I=p.voltage/p.resistance,P=p.voltage*I;
+   const left=w*.18,right=w*.82,top=75,bottom=260;
+   ctx.strokeStyle='#334EAC';ctx.lineWidth=4;ctx.strokeRect(left,top,right-left,bottom-top);
+   ctx.fillStyle='#f7faff';ctx.fillRect(left-9,138,18,50);ctx.strokeStyle='#081F5C';ctx.lineWidth=3;
+   ctx.beginPath();ctx.moveTo(left-18,149);ctx.lineTo(left+18,149);ctx.moveTo(left-11,174);ctx.lineTo(left+11,174);ctx.stroke();
+   ctx.fillStyle='#f7faff';ctx.fillRect(w/2-43,top-17,86,35);ctx.fillStyle='#d0e3ff';ctx.fillRect(w/2-40,top-13,80,26);ctx.fillStyle='#081F5C';ctx.textAlign='center';ctx.fillText('R = '+p.resistance+' Ω',w/2,top+4);ctx.textAlign='start';
+   ctx.fillText('+',left+23,151);ctx.fillText('−',left+23,180);
+   if(s.running){const f=(t*I*.16)%1;const edges=[[left,top,right,top],[right,top,right,bottom],[right,bottom,left,bottom],[left,bottom,left,top]];for(let j=0;j<12;j++){let a=(j/12+f)%1,idx=Math.floor(a*4),r=(a*4)%1;const [x1,y1,x2,y2]=edges[idx];ctx.fillStyle='#f59e0b';ctx.beginPath();ctx.arc(x1+(x2-x1)*r,y1+(y2-y1)*r,4,0,Math.PI*2);ctx.fill();}}
+   summary=`电流 I = U / R = ${I.toFixed(3)} A　功率 P = U × I = ${P.toFixed(2)} W`;
+ }
+ const out=document.getElementById('nativeLabReadout');if(out)out.textContent=summary;
+}
+function initNativeLab(){
+ if(!document.getElementById('nativeLab'))return;
+ document.querySelectorAll('[data-lab]').forEach(btn=>btn.addEventListener('click',()=>setNativeLab(btn.dataset.lab)));
+ document.getElementById('nativeLabControls')?.addEventListener('input',e=>{
+   const key=e.target.dataset.labInput;if(!key)return;nativeLabState[nativeLabState.type][key]=Number(e.target.value);
+   const cfg=nativeLabFields[nativeLabState.type].find(x=>x[0]===key);
+   document.querySelector(`[data-lab-value="${key}"]`).textContent=`${e.target.value} ${cfg[2]}`;
+   stopNativeLab();nativeLabState.elapsed=0;drawNativeLab();
+ });
+ setNativeLab('pendulum');
+ if('ResizeObserver' in window){new ResizeObserver(()=>{if(document.getElementById('tools')?.classList.contains('active'))drawNativeLab();}).observe(document.getElementById('nativeLabCanvas'));}
+}
+document.addEventListener('DOMContentLoaded',initNativeLab);

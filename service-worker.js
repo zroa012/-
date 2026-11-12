@@ -1,11 +1,11 @@
-const CACHE_NAME = 'smart-study-buttons-v7';
+const CACHE_NAME = 'smart-study-native-lab-v8';
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=20261112-buttons-v7",
-  "./script.js?v=20261112-buttons-v7",
-  "./markdown-renderer.js?v=20261112-buttons-v7",
-  "./mathjax-tex-svg.js?v=20261112-buttons-v7",
+  "./style.css?v=20261112-lab-v8",
+  "./script.js?v=20261112-lab-v8",
+  "./markdown-renderer.js?v=20261112-lab-v8",
+  "./mathjax-tex-svg.js?v=20261112-lab-v8",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

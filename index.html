@@ -9,7 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="style.css?v=20261112-buttons-v7">
+    <link rel="stylesheet" href="style.css?v=20261112-lab-v8">
 </head>
 <body>
 
@@ -484,12 +484,22 @@ int main() {
                 </div>
 
                 <div class="tool-card">
-                    <h2>在线实验室</h2>
-                    <p>打开在线实验室，进行物理等科学实验模拟与探究。</p>
-                    <div class="lab-actions"><button type="button" class="primary" onclick="openEmbeddedLab()">在本页打开实验室</button><a class="secondary tool-link-button" href="https://wl.nobook.com/console/templates/resource?grade_id=2" target="_blank" rel="noopener noreferrer">新标签页打开</a></div>
-                    <div id="onlineLabPanel" class="lab-panel" hidden>
-                        <div class="lab-notice">实验室由第三方网站提供。如果显示空白、拒绝连接或要求登录，请使用“新标签页打开”。这类限制由对方网站决定。</div>
-                        <iframe id="onlineLabFrame" title="在线物理实验室" referrerpolicy="no-referrer" allow="fullscreen" loading="lazy"></iframe>
+                    <h2>物理实验室</h2>
+                    <p>本站原生互动实验：调节参数、运行模拟、观察实验现象和测量结果，无需跳转或第三方账号。</p>
+                    <div id="nativeLab" class="native-lab">
+                        <div class="native-lab-tabs" role="tablist" aria-label="选择物理实验">
+                            <button class="active" type="button" data-lab="pendulum" role="tab" aria-selected="true">单摆运动</button>
+                            <button type="button" data-lab="projectile" role="tab" aria-selected="false">抛体运动</button>
+                            <button type="button" data-lab="circuit" role="tab" aria-selected="false">欧姆定律</button>
+                        </div>
+                        <div class="native-lab-controls" id="nativeLabControls"></div>
+                        <canvas id="nativeLabCanvas" class="native-lab-canvas" aria-label="物理实验模拟画布"></canvas>
+                        <div id="nativeLabReadout" class="native-lab-readout" aria-live="polite"></div>
+                        <div class="native-lab-actions">
+                            <button type="button" class="primary" id="nativeLabPlay" onclick="toggleNativeLab()">开始实验</button>
+                            <button type="button" class="secondary" onclick="resetNativeLab()">重置实验</button>
+                        </div>
+                        <p class="native-lab-note">这是用于理解物理规律的理想化模型：单摆按小角度近似公式计时，抛体忽略空气阻力，电路按理想直流电源与电阻计算。</p>
                     </div>
                 </div>
             </div>
@@ -522,7 +532,7 @@ int main() {
               <section class="panel ai-panel">
                 <div class="ai-head"><span class="ai-avatar"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 3v4M9 3h6M8 14h.01M16 14h.01M9 18h6"/></svg></span><div><strong>AI 学习老师</strong><small>先理解思路，再掌握方法</small></div><span class="ai-model">DeepSeek Flash</span></div>
                 <div id="aiMessages" class="ai-messages" role="log" aria-live="polite"><div class="ai-bubble assistant">你好！我是你的 AI 伴学老师。数学、英语、编程、理科等学习问题都可以问我。我会尽量分步骤讲解，也可以只给你提示。</div></div>
-                <p class="ai-chat-save-hint">聊天记录自动保存在当前浏览器。刷新后可继续，换设备不会自动同步。</p><div class="ai-suggestions"><button type="button" onclick="setAIQuestion('请用简单的例子解释二次函数的顶点式')">讲解知识点</button><button type="button" onclick="setAIQuestion('请帮我分析这道题的解题思路，我稍后提供题目')">分析解题思路</button><button type="button" onclick="setAIQuestion('给我设计一道适合练习的题目，并在我回答后批改')">出题练习</button><button type="button" onclick="setAIQuestion('请用苏格拉底式提问引导我学习，不要直接告诉我答案')">启发式教学</button></div>
+                <p class="ai-chat-save-hint">聊天记录保存在本机浏览器 · 刷新后可继续 · 不会自动同步到其他设备</p><div class="ai-suggestions"><button type="button" onclick="setAIQuestion('请用简单的例子解释二次函数的顶点式')">讲解知识点</button><button type="button" onclick="setAIQuestion('请帮我分析这道题的解题思路，我稍后提供题目')">分析解题思路</button><button type="button" onclick="setAIQuestion('给我设计一道适合练习的题目，并在我回答后批改')">出题练习</button><button type="button" onclick="setAIQuestion('请用苏格拉底式提问引导我学习，不要直接告诉我答案')">启发式教学</button></div>
                 <form class="ai-compose" id="aiForm" onsubmit="askAI(event)"><textarea id="aiInput" placeholder="输入你的学习问题……（Enter 发送，Shift+Enter 换行）" rows="3" maxlength="6000" aria-label="向AI老师提问"></textarea><div class="ai-compose-actions"><span id="aiStatus">需在 Cloudflare 设置 DEEPSEEK_API_KEY 后启用</span><button id="aiSend" class="primary" type="submit">发送提问</button></div></form>
               </section>
               <aside class="ai-info panel">
@@ -628,9 +638,9 @@ window.MathJax = {
   startup: {typeset: false}
 };
 </script>
-<script defer src="mathjax-tex-svg.js?v=20261112-buttons-v7"></script>
-<script src="markdown-renderer.js?v=20261112-buttons-v7"></script>
-<script src="script.js?v=20261112-buttons-v7"></script>
+<script defer src="mathjax-tex-svg.js?v=20261112-lab-v8"></script>
+<script src="markdown-renderer.js?v=20261112-lab-v8"></script>
+<script src="script.js?v=20261112-lab-v8"></script>
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
