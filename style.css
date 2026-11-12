@@ -1904,8 +1904,20 @@ body.study-lock-sidebar .main { margin-left: 0; width: 100%; }
 /* MathJax LaTeX 数学公式样式 */
 .ai-markdown .ai-math-display{display:block;max-width:100%;overflow-x:auto;overflow-y:hidden;margin:12px 0;text-align:center;padding:6px 2px}
 .ai-markdown .ai-math-inline{display:inline}
-.ai-markdown mjx-container[jax="SVG"][display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;margin:.6em 0}
-.ai-markdown mjx-container svg{max-width:none}
+/* SVG 每个公式按正常字号布局；约束 svg 的尺寸防止浏览器异常无限放大 */
+.ai-markdown mjx-container[jax="SVG"], .baseline-question mjx-container[jax="SVG"]{font-size:1em!important;line-height:normal;max-width:100%}
+.ai-markdown mjx-container[jax="SVG"][display="true"],.baseline-question mjx-container[jax="SVG"][display="true"]{display:block;max-width:100%;overflow-x:auto;overflow-y:hidden;margin:.7em 0}
+.ai-markdown mjx-container[jax="SVG"] svg,.baseline-question mjx-container[jax="SVG"] svg{max-width:100%!important;max-height:8em!important;vertical-align:middle}
+.ai-markdown mjx-container[jax="SVG"] mjx-assistive-mml,.baseline-question mjx-container[jax="SVG"] mjx-assistive-mml{display:none}
+.ai-markdown .ai-math-display{max-width:100%;overflow-x:auto}
+.baseline-question .ai-markdown{font-size:14px;line-height:1.75;min-width:0;overflow-wrap:anywhere}
+.baseline-question .baseline-prompt{padding:0 0 8px}
+.baseline-question .baseline-prompt p{margin:0 0 8px}
+.baseline-option .baseline-answer{display:block;min-width:0;flex:1}
+.baseline-option .baseline-answer p{margin:0}
+.baseline-option .baseline-choice{flex:none;width:20px;font-weight:600;color:#334EAC}
+
+
 
 /* AI baseline diagnostic and wrong-question tutor */
 .baseline-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}

@@ -2260,20 +2260,34 @@ function persistAIChat(){
 }
 let aiBusy = false;
 function setAIQuestion(value) { const el=document.getElementById('aiInput'); if(el){el.value=value;el.focus();} }
+// 等待数学引擎就绪并顺序排版，避免图片尺寸异常或首次加载不显示。
+let aiMathQueue=Promise.resolve();
+function typesetStudyMath(element) {
+  if(!element)return;
+  aiMathQueue=aiMathQueue.then(async ()=>{
+    if(!window.MathJax)return;
+    if(window.MathJax.startup?.promise) await window.MathJax.startup.promise;
+    if(typeof window.MathJax.typesetPromise==='function' && element.isConnected)
+      await window.MathJax.typesetPromise([element]);
+  }).catch(error=>console.warn('公式渲染失败',error));
+}
+function renderStudyMathMarkdown(text) {
+  return typeof window.renderStudyMarkdown==='function'
+    ? window.renderStudyMarkdown(String(text))
+    : escapeHtml(String(text));
+}
 function appendAIMessage(role, text) {
   const list=document.getElementById('aiMessages');if(!list)return;
   const node=document.createElement('div');node.className='ai-bubble '+(role==='user'?'user':'assistant');
   if(role==='assistant' && typeof window.renderStudyMarkdown==='function') {
     node.classList.add('ai-markdown');
-    node.innerHTML=window.renderStudyMarkdown(text);
-    // 公式从本站加载的 MathJax 渲染；只渲染新增 AI 消息。
-    if(window.MathJax && typeof window.MathJax.typesetPromise==='function') {
-      window.MathJax.typesetPromise([node]).catch(err => console.warn('数学公式渲染失败',err));
-    }
+    node.innerHTML=renderStudyMathMarkdown(text);
   } else {
     node.textContent=text;
   }
-  list.appendChild(node);list.scrollTop=list.scrollHeight;
+  list.appendChild(node);
+  if(role==='assistant') typesetStudyMath(node);
+  list.scrollTop=list.scrollHeight;
 }
 function clearAIChat() {
   if(aiBusy) return;
@@ -2385,8 +2399,20 @@ async function startBaselineAssessment(){
   finally{if(btn)btn.disabled=false;}
 }
 function renderBaselineQuiz(){
-  const el=document.getElementById('baselineQuiz');if(!el||!baselineQuiz?.questions)return;
-  el.innerHTML=baselineQuiz.questions.map((q,i)=>`<fieldset class="baseline-question"><legend>${i+1}. ${escapeHtml(q.question)}</legend>${q.options.map((v,j)=>`<label class="baseline-option"><input type="radio" name="baselineQ${i}" value="${j}"><span>${'ABCD'[j]}. ${escapeHtml(v)}</span></label>`).join('')}</fieldset>`).join('')+'<button class="primary big" type="button" onclick="finishBaselineAssessment()">提交测评并创建知识点</button>';
+  const el=document.getElementById('baselineQuiz');
+  if(!el||!baselineQuiz?.questions)return;
+  el.innerHTML=baselineQuiz.questions.map((q,i)=>
+    `<fieldset class="baseline-question">
+      <legend>第 ${i+1} 题</legend>
+      <div class="baseline-prompt ai-markdown">${renderStudyMathMarkdown(q.question)}</div>
+      ${q.options.map((v,j)=>
+        `<label class="baseline-option"><input type="radio" name="baselineQ${i}" value="${j}">
+          <span class="baseline-choice">${'ABCD'[j]}.</span>
+          <span class="baseline-answer ai-markdown">${renderStudyMathMarkdown(v)}</span>
+        </label>`).join('')}
+    </fieldset>`
+  ).join('')+'<button class="primary big" type="button" onclick="finishBaselineAssessment()">提交测评并创建知识点</button>';
+  typesetStudyMath(el);
 }
 function finishBaselineAssessment(){
   if(!baselineQuiz?.questions)return;
