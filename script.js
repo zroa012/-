@@ -89,6 +89,10 @@ function showPage(id) {
     }
 
     refresh();
+    if(id === "tools") requestAnimationFrame(()=>{
+        if (typeof initGeometryBoard === "function") initGeometryBoard();
+        if (typeof drawFunctionGraph === "function") drawFunctionGraph();
+    });
 }
 
 function fillStudySelect() {
@@ -688,25 +692,32 @@ function resetFunctionZoom() {
     renderFunctionZoom();
 }
 
+let graphAngleMode = "rad";
+let graphInverseMode = false;
+function factorialGraph(n){
+    if(!Number.isInteger(n)||n<0||n>170)return NaN;
+    let v=1;for(let i=2;i<=n;i++)v*=i;return v;
+}
+function rootGraph(x,n){
+    if(!Number.isFinite(n)||n===0)return NaN;
+    if(x<0 && Number.isInteger(n) && Math.abs(n)%2===1)return -Math.pow(-x,1/n);
+    return Math.pow(x,1/n);
+}
 function getFunctionCompiled(expr) {
     try {
-        const normalized = String(expr || "")
-            .trim()
-            .replace(/×/g, "*")
-            .replace(/π/g, "Math.PI");
-        const safe = normalized
-            .replace(/\^/g, "**")
-            .replace(/\bsin\b/gi, "Math.sin")
-            .replace(/\bcos\b/gi, "Math.cos")
-            .replace(/\btan\b/gi, "Math.tan")
-            .replace(/\bsqrt\b/gi, "Math.sqrt")
-            .replace(/\babs\b/gi, "Math.abs")
-            .replace(/\blog\b/gi, "Math.log10");
-        if (!/^[0-9xX+\-*/().,\sA-Za-z*_]+$/.test(safe)) return null;
-        return new Function("x", `return (${safe});`);
-    } catch (e) {
-        return null;
-    }
+        // Reject unknown identifiers before generating a numerical function.
+        const normalized=String(expr||"").trim().replace(/×/g,"*").replace(/÷/g,"/").replace(/π/g,"pi").replace(/\^/g,"**");
+        if(!normalized || /[^0-9a-zA-Z_+\-*/().,\s]/.test(normalized))return null;
+        const allowed=new Set(["x","pi","e","sin","cos","tan","asin","acos","atan","sqrt","abs","log","ln","root","factorial"]);
+        const words=normalized.match(/[A-Za-z_]+/g)||[];
+        if(words.some(w=>!allowed.has(w.toLowerCase())))return null;
+        const raw=normalized.replace(/\b(pi|e|sin|cos|tan|asin|acos|atan|sqrt|abs|log|ln|root|factorial)\b/gi,(word)=>word.toLowerCase());
+        // Each token is a variable or a known local function; no access to global objects.
+        const evaluator=new Function("x","pi","e","sin","cos","tan","asin","acos","atan","sqrt","abs","log","ln","root","factorial",`"use strict"; return (${raw});`);
+        const trigonometric=graphAngleMode==="deg" ? v=>v*Math.PI/180 : v=>v;
+        const inverse=graphAngleMode==="deg" ? v=>v*180/Math.PI : v=>v;
+        return x=>evaluator(x,Math.PI,Math.E,v=>Math.sin(trigonometric(v)),v=>Math.cos(trigonometric(v)),v=>Math.tan(trigonometric(v)),v=>inverse(Math.asin(v)),v=>inverse(Math.acos(v)),v=>inverse(Math.atan(v)),Math.sqrt,Math.abs,Math.log10,Math.log,rootGraph,factorialGraph);
+    }catch(e){return null;}
 }
 
 function renderFunctionZoom() {
@@ -828,22 +839,8 @@ function drawFunctionGraph() {
     const expr = input.value.trim().replace(/×/g, "*").replace(/π/g, "Math.PI");
     if (!expr) { showMessage("请输入函数表达式"); return; }
 
-    let compiled;
-    try {
-        const safe = expr
-            .replace(/\^/g, "**")
-            .replace(/\bsin\b/gi, "Math.sin")
-            .replace(/\bcos\b/gi, "Math.cos")
-            .replace(/\btan\b/gi, "Math.tan")
-            .replace(/\bsqrt\b/gi, "Math.sqrt")
-            .replace(/\babs\b/gi, "Math.abs")
-            .replace(/\blog\b/gi, "Math.log10");
-        if (!/^[0-9xX+\-*/().,\sA-Za-z*_]+$/.test(safe)) throw new Error("非法字符");
-        compiled = new Function("x", `return (${safe});`);
-    } catch (e) {
-        showMessage("函数表达式无法识别，请检查格式");
-        return;
-    }
+    const compiled = getFunctionCompiled(input.value.trim());
+    if (!compiled) { showMessage("函数表达式无法识别，请检查格式"); return; }
 
     const rect = canvas.getBoundingClientRect();
     const width = Math.max(420, Math.floor(rect.width || 650));
@@ -1649,8 +1646,8 @@ function geometryCanvasSize() {
     const canvas = document.getElementById("geometryCanvas");
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
-    const w = Math.max(420, Math.floor(rect.width || 650));
-    const h = Math.max(300, Math.floor(rect.height || 420));
+    const w = Math.max(1, rect.width || canvas.clientWidth || 320);
+    const h = Math.max(1, rect.height || canvas.clientHeight || 320);
     const dpr = window.devicePixelRatio || 1;
     if (canvas.width !== w*dpr || canvas.height !== h*dpr) {
         canvas.width = w*dpr; canvas.height = h*dpr;
@@ -1661,7 +1658,10 @@ function geometryCanvasSize() {
 function geoToCanvas(e) {
     const canvas = document.getElementById("geometryCanvas");
     const r = canvas.getBoundingClientRect();
-    return { x: e.clientX-r.left, y: e.clientY-r.top };
+    // Canvas units = actual displayed CSS pixels. Use pointer client coordinates, not screen/page offsets.
+    const x=(e.clientX-r.left)*(canvas.width/(window.devicePixelRatio||1))/r.width;
+    const y=(e.clientY-r.top)*(canvas.height/(window.devicePixelRatio||1))/r.height;
+    return { x: Math.max(0,Math.min(canvas.width/(window.devicePixelRatio||1),x)), y: Math.max(0,Math.min(canvas.height/(window.devicePixelRatio||1),y)) };
 }
 
 function drawGeometryBoard() {
@@ -1714,14 +1714,18 @@ function initGeometryBoard(){
             document.querySelectorAll("[data-geo-tool]").forEach(b=>b.classList.toggle("active",b===btn));
             drawGeometryBoard();
         }));
-        canvas.addEventListener("click",geometryClick);
+        canvas.addEventListener("pointerdown",e=>{
+            if (e.pointerType==="mouse" && e.button!==0) return;
+            e.preventDefault();
+            geometryClick(e);
+        });
     }
     drawGeometryBoard();
 }
 
 function geometryClick(e){
     const p=geoToCanvas(e), tool=geometryState.tool;
-    if(tool==="select") return;
+    if(tool==="select" || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return;
     geometryState.points.push(p);
     const need={point:1,segment:2,line:2,circle:2,triangle:3}[tool];
     if(geometryState.points.length<need){drawGeometryBoard();return;}
@@ -2312,7 +2316,27 @@ async function askAI(event) {
     aiConversation.push({role:'user',content:question},{role:'assistant',content:data.answer});
     if(aiConversation.length>50)aiConversation.splice(0,aiConversation.length-50);
     persistAIChat();
-    appendAIMessage('assistant',data.answer);status.textContent='已完成 · 可继续追问';
+    appendAIMessage('assistant',data.answer);
+    const reason=data.finishReason || 'unknown';
+    if(data.truncated || reason==='length') {
+      appendAIMessage('assistant','⚠️ 本次回答达到输出长度限制，内容尚未讲完。可以点击下面的“继续讲解”，让 AI 接着回答。');
+      const list=document.getElementById('aiMessages');
+      if(list){
+        const wrap=document.createElement('div');wrap.className='ai-continue-wrap';
+        const btn=document.createElement('button');btn.type='button';btn.className='btn ai-continue-btn';
+        btn.textContent='继续讲解';
+        btn.onclick=()=>{if(aiBusy)return;wrap.remove();const field=document.getElementById('aiInput');if(field){field.value='请紧接上一条回答未完成的地方继续讲解，不要重复已经讲过的内容。';field.focus();}const form=field?.closest('form');if(form)form.requestSubmit();};
+        wrap.appendChild(btn);list.appendChild(wrap);
+        list.scrollTop=list.scrollHeight;
+      }
+      status.textContent='本次回答达到长度上限 · 点击继续讲解';
+    } else if(reason==='content_filter') {
+      status.textContent='部分内容未返回（内容过滤）';
+    } else if(reason==='aborted'||reason==='insufficient_system_resource') {
+      status.textContent='模型响应中断，可重新提问';
+    } else {
+      status.textContent='已完成 · 可继续追问';
+    }
   }catch(err){appendAIMessage('assistant','连接失败：'+err.message);status.textContent='连接失败，可重试';input.value=question;}
   finally{aiBusy=false;send.disabled=false;loadAIUsage();}
 }
@@ -2448,3 +2472,48 @@ function explainWrongWithAI(id){
   document.getElementById('aiInput')?.focus();
   showMessage('已把错题放入AI提问框，点击发送开始讲解');
 }
+
+/* 函数图像数学快捷键：光标插入、模式切换和内嵌实验室。 */
+function graphInsertText(template, wrap=false){
+    const input=document.getElementById('functionInput');if(!input)return;
+    const start=input.selectionStart??input.value.length,end=input.selectionEnd??start;
+    const selected=input.value.slice(start,end)||'x';
+    let insertion=template;
+    if(wrap){insertion=insertion.replace('${cursor}',selected).replace('${arg}','2');}
+    input.setRangeText(insertion,start,end,'end');input.focus();
+    // Place caret in the exponent/root index when a default argument is inserted.
+    if(wrap && template.includes('${arg}')){
+        const pos=start+insertion.lastIndexOf('2');
+        if(pos>=start)input.setSelectionRange(pos,pos+1);
+    }
+    drawFunctionGraph();
+}
+function initGraphKeypad(){
+    const panel=document.querySelector('.function-keypad');if(!panel||panel.dataset.initialized)return;
+    panel.dataset.initialized='true';
+    panel.addEventListener('click',event=>{
+        const btn=event.target.closest('button');if(!btn)return;
+        if(btn.id==='graphAngleToggle'){
+            graphAngleMode=graphAngleMode==='rad'?'deg':'rad';
+            btn.textContent=graphAngleMode==='rad'?'Rad':'Deg';btn.setAttribute('aria-pressed',String(graphAngleMode==='deg'));
+            document.getElementById('graphKeyboardHint').textContent=`三角函数当前使用${graphAngleMode==='rad'?'弧度 RAD':'角度 DEG'}；Inv 切换反三角函数。`;
+            drawFunctionGraph();return;
+        }
+        if(btn.id==='graphInverseToggle'){
+            graphInverseMode=!graphInverseMode;btn.classList.toggle('active',graphInverseMode);btn.setAttribute('aria-pressed',String(graphInverseMode));
+            panel.querySelectorAll('[data-trig]').forEach(b=>{
+                const name=b.dataset.trig; b.textContent=graphInverseMode?'a'+name:name;
+                b.dataset.graphTemplate=(graphInverseMode?'a':'')+name+'(${cursor})';
+            });return;
+        }
+        if(btn.hasAttribute('data-graph-insert'))graphInsertText(btn.dataset.graphInsert,false);
+        else if(btn.hasAttribute('data-graph-template'))graphInsertText(btn.dataset.graphTemplate,true);
+    });
+}
+function openEmbeddedLab(){
+    const panel=document.getElementById('onlineLabPanel'),frame=document.getElementById('onlineLabFrame');
+    if(!panel||!frame)return;
+    panel.hidden=!panel.hidden;
+    if(!panel.hidden&&!frame.src)frame.src='https://wl.nobook.com/console/templates/resource?grade_id=2';
+}
+document.addEventListener('DOMContentLoaded',()=>initGraphKeypad());

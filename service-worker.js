@@ -1,11 +1,11 @@
-const CACHE_NAME = 'smart-study-math-render-fix-v4';
+const CACHE_NAME = 'smart-study-buttons-v7';
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=20261112-mathfix-v4",
-  "./script.js?v=20261112-mathfix-v4",
-  "./markdown-renderer.js?v=20261112-mathfix-v4",
-  "./mathjax-tex-svg.js?v=20261112-mathfix-v4",
+  "./style.css?v=20261112-buttons-v7",
+  "./script.js?v=20261112-buttons-v7",
+  "./markdown-renderer.js?v=20261112-buttons-v7",
+  "./mathjax-tex-svg.js?v=20261112-buttons-v7",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

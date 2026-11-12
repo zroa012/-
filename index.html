@@ -9,7 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="style.css?v=20261112-mathfix-v4">
+    <link rel="stylesheet" href="style.css?v=20261112-buttons-v7">
 </head>
 <body>
 
@@ -407,8 +407,7 @@ int main() {
                 <div class="tool-card">
                     <h2>几何画板</h2>
                     <p>直接在学习助手中绘制点、线段、直线、圆和三角形，无需打开其他网站。</p>
-                    <button class="primary" type="button" onclick="toggleLocalTool('geometryPanel', this)">打开几何画板</button>
-                    <div id="geometryPanel" class="local-tool-panel" style="display:none;">
+                    <div id="geometryPanel" class="local-tool-panel">
                         <div class="geometry-toolbar">
                             <button type="button" class="tool-choice active" data-geo-tool="select">选择</button>
                             <button type="button" class="tool-choice" data-geo-tool="point">点</button>
@@ -433,8 +432,32 @@ int main() {
                             <button class="primary" onclick="drawFunctionGraph()">绘制</button>
                             <button class="secondary function-export-btn" type="button" onclick="exportFunctionGraph()">导出图片</button>
                         </div>
+                        <div class="function-keypad" aria-label="函数数学快捷输入键盘">
+                            <div class="function-keypad-head"><strong>数学快捷键</strong><span>点击后插入到上方函数输入框</span></div>
+                            <div class="function-keypad-grid">
+                                <button type="button" data-graph-insert="(" title="左括号">(</button>
+                                <button type="button" data-graph-insert=")" title="右括号">)</button>
+                                <button type="button" data-graph-template="1/(${cursor})" title="倒数">1/x</button>
+                                <button type="button" data-graph-template="(${cursor})^2">x²</button>
+                                <button type="button" data-graph-template="(${cursor})^3">x³</button>
+                                <button type="button" data-graph-template="(${cursor})^(${arg})">xʸ</button>
+                                <button type="button" data-graph-template="factorial(${cursor})" title="阶乘（仅非负整数）">x!</button>
+                                <button type="button" data-graph-template="sqrt(${cursor})">√</button>
+                                <button type="button" data-graph-template="root(${cursor},${arg})" title="n次方根">ʸ√x</button>
+                                <button type="button" data-graph-insert="e">e</button>
+                                <button type="button" data-graph-template="ln(${cursor})">ln</button>
+                                <button type="button" data-graph-template="log(${cursor})">log</button>
+                                <button type="button" data-graph-template="sin(${cursor})" data-trig="sin">sin</button>
+                                <button type="button" data-graph-template="cos(${cursor})" data-trig="cos">cos</button>
+                                <button type="button" data-graph-template="tan(${cursor})" data-trig="tan">tan</button>
+                                <button type="button" id="graphInverseToggle" aria-pressed="false">Inv</button>
+                                <button type="button" id="graphAngleToggle" aria-pressed="false" title="点击切换角度与弧度">Rad</button>
+                                <button type="button" data-graph-insert="π">π</button>
+                            </div>
+                            <p id="graphKeyboardHint" class="tool-tip">三角函数当前使用弧度（RAD）；Inv 切换反三角函数。</p>
+                        </div>
                         <div class="function-canvas-wrap" title="点击图像放大"><canvas id="functionCanvas" class="function-canvas"></canvas><div class="function-canvas-hint">点击图像可放大查看</div></div>
-                        <p class="tool-tip">支持：x、+、-、*、/、^、sin、cos、tan、sqrt、abs、log。</p>
+                        <p class="tool-tip">支持：x、四则运算、幂、阶乘、n 次根、sin、cos、tan、asin、acos、atan、ln、log。输入示例：root(x,3)；阶乘仅对非负整数有效。</p>
                     </div>
                 </div>
 
@@ -463,7 +486,11 @@ int main() {
                 <div class="tool-card">
                     <h2>在线实验室</h2>
                     <p>打开在线实验室，进行物理等科学实验模拟与探究。</p>
-                    <a class="secondary tool-link-button" href="https://wl.nobook.com/console/templates/resource?grade_id=2" target="_blank" rel="noopener noreferrer">打开在线实验室</a>
+                    <div class="lab-actions"><button type="button" class="primary" onclick="openEmbeddedLab()">在本页打开实验室</button><a class="secondary tool-link-button" href="https://wl.nobook.com/console/templates/resource?grade_id=2" target="_blank" rel="noopener noreferrer">新标签页打开</a></div>
+                    <div id="onlineLabPanel" class="lab-panel" hidden>
+                        <div class="lab-notice">实验室由第三方网站提供。如果显示空白、拒绝连接或要求登录，请使用“新标签页打开”。这类限制由对方网站决定。</div>
+                        <iframe id="onlineLabFrame" title="在线物理实验室" referrerpolicy="no-referrer" allow="fullscreen" loading="lazy"></iframe>
+                    </div>
                 </div>
             </div>
         </div>
@@ -601,9 +628,9 @@ window.MathJax = {
   startup: {typeset: false}
 };
 </script>
-<script defer src="mathjax-tex-svg.js?v=20261112-mathfix-v4"></script>
-<script src="markdown-renderer.js?v=20261112-mathfix-v4"></script>
-<script src="script.js?v=20261112-mathfix-v4"></script>
+<script defer src="mathjax-tex-svg.js?v=20261112-buttons-v7"></script>
+<script src="markdown-renderer.js?v=20261112-buttons-v7"></script>
+<script src="script.js?v=20261112-buttons-v7"></script>
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));

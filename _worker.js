@@ -4,7 +4,7 @@ const HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Cont
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: HEADERS });
 const LIMIT_MICRO = 1_000_000; // ¥1, stored as millionths of RMB
 const MODEL = 'deepseek-flash';
-const OUTPUT_MAX = 1200;
+const OUTPUT_MAX = 4096; // 足够容纳较长讲解；按此上限预留每日预算
 const SYSTEM = '你是耐心、严谨的中文AI伴学老师。优先启发式教学，先讲思路再给答案，清楚分步骤。数学和代码要认真检查推理。对不确定的事实诚实说明，不编造引用。针对学生提问给出适度详细、易理解的解释。';
 // 最高费率 (RMB per 1M tokens): input uncached ¥2; output ¥8.
 // 账本记录保守费用上界；实际 DeepSeek 账单可能更低（缓存命中、非高峰）。
@@ -85,7 +85,7 @@ async function handleAI(request, env) {
     db=await database(env); day=todayCST(); reserved=reserveMicro(parsed.length);
     if (!await reserveBudget(db,day,reserved)) return json({error:'今日 AI 预算不足，已暂停付费提问。北京时间明天零点重置。',code:'DAILY_LIMIT',usage:await getUsage(db,day)},429);
   }catch(e){console.error('Budget reservation failed',e);return json({error:'AI 额度数据库未就绪，已停止付费请求以保护余额。'},503);}
-  const controller=new AbortController(), timeout=setTimeout(()=>controller.abort(),60000);
+  const controller=new AbortController(), timeout=setTimeout(()=>controller.abort(),90000);
   let actual=0, input=0, output=0, success=false;
   try {
     const upstream=await fetch('https://api.deepseek.com/chat/completions', {
@@ -100,6 +100,7 @@ async function handleAI(request, env) {
       return json({error:errors[upstream.status]||`DeepSeek 请求失败（HTTP ${upstream.status}）`},502);
     }
     const body=await upstream.json();
+    const finishReason=body?.choices?.[0]?.finish_reason || 'unknown';
     const answer=body?.choices?.[0]?.message?.content;
     if(typeof answer!=='string'||!answer.trim())return json({error:'AI 未返回有效回答，请重试。'},502);
     const u=body?.usage;
@@ -107,14 +108,14 @@ async function handleAI(request, env) {
       // 缺失 usage 时扣除预留额度，不冒险少记账。
       actual=reserved;
       success=true;
-      return json({answer,warning:'本次未收到 Token 统计，已按预留金额计入预算。'});
+      return json({answer,finishReason,truncated:finishReason==='length',warning:'本次未收到 Token 统计，已按预留金额计入预算。'});
     }
     input=Math.max(0,Math.ceil(Number(u.prompt_tokens)));
     output=Math.max(0,Math.ceil(Number(u.completion_tokens)));
     const measured=Math.ceil(input*priceInput+output*priceOutput);
     actual=Math.min(LIMIT_MICRO,measured); // measured bill upper bound at peak-time non-cache prices
     success=true;
-    return json({answer});
+    return json({answer,finishReason,truncated:finishReason==='length'});
   }catch(e){console.error('AI request failed',e?.name);return json({error:'AI 请求超时或连接失败，请稍后重试。'},504);}
   finally{
     clearTimeout(timeout);
