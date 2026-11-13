@@ -1,11 +1,11 @@
-const CACHE_NAME = 'smart-study-v9-lab-and-usage';
+const CACHE_NAME = 'smart-study-v10-circuit-and-intro';
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=20261113-v9",
-  "./script.js?v=20261113-v9",
-  "./markdown-renderer.js?v=20261113-v9",
-  "./mathjax-tex-svg.js?v=20261113-v9",
+  "./style.css?v=20261113-v10",
+  "./script.js?v=20261113-v10",
+  "./markdown-renderer.js?v=20261113-v10",
+  "./mathjax-tex-svg.js?v=20261113-v10",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

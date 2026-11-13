@@ -1245,7 +1245,7 @@ function initFirstUseIntro() {
             align-items:center;
             justify-content:center;
             padding:24px;
-            background:#f5f6f8;
+            background:linear-gradient(135deg,#e7f1ff 0%,#f9fcff 54%,#d0e3ff 100%);
             transition:opacity .25s ease;
         }
         #firstUseIntro.hide{
@@ -1258,10 +1258,10 @@ function initFirstUseIntro() {
             overflow:auto;
             box-sizing:border-box;
             background:#fff;
-            border:1px solid #dfe3e8;
-            border-radius:8px;
+            border:1px solid #d0e3ff;
+            border-radius:24px;
             padding:36px 40px 32px;
-            box-shadow:0 8px 28px rgba(0,0,0,.07);
+            box-shadow:0 24px 65px rgba(8,31,92,.14);
         }
         .first-use-kicker{
             color:#334EAC;
@@ -1270,20 +1270,20 @@ function initFirstUseIntro() {
         }
         .first-use-card h1{
             margin:0;
-            color:#202938;
+            color:#081F5C;
             font-size:30px;
             line-height:1.3;
         }
         .first-use-subtitle{
             margin:10px 0 0;
-            color:#697386;
+            color:#536b94;
             line-height:1.8;
             font-size:14px;
         }
         .first-use-section-title{
             margin:26px 0 12px;
             font-size:16px;
-            color:#202938;
+            color:#081F5C;
         }
         .first-use-features{
             display:grid;
@@ -1292,32 +1292,32 @@ function initFirstUseIntro() {
         }
         .first-use-feature{
             padding:16px 18px;
-            border:1px solid #e1e5ea;
-            border-radius:6px;
+            border:1px solid #d0e3ff;
+            border-radius:14px;
             background:#fff;
         }
         .first-use-feature strong{
             display:block;
             margin-bottom:6px;
-            color:#202938;
+            color:#081F5C;
             font-size:15px;
         }
         .first-use-feature span{
             display:block;
-            color:#788293;
+            color:#647fa9;
             font-size:12px;
             line-height:1.7;
         }
         .first-use-flow{
             margin-top:18px;
             padding:16px 18px;
-            border:1px solid #e1e5ea;
-            border-radius:6px;
-            background:#fafbfc;
+            border:1px solid #d0e3ff;
+            border-radius:14px;
+            background:#f1f7ff;
         }
         .flow-title{
             margin-bottom:12px;
-            color:#202938;
+            color:#081F5C;
             font-weight:600;
             font-size:14px;
         }
@@ -1331,8 +1331,8 @@ function initFirstUseIntro() {
             padding:12px;
             box-sizing:border-box;
             background:#fff;
-            border:1px solid #e1e5ea;
-            border-radius:5px;
+            border:1px solid #d0e3ff;
+            border-radius:11px;
         }
         .flow-step b{
             display:block;
@@ -1341,13 +1341,13 @@ function initFirstUseIntro() {
             margin-bottom:6px;
         }
         .flow-step span{
-            color:#4b5565;
+            color:#33527e;
             font-size:13px;
             line-height:1.5;
         }
         .first-use-tools{
             margin-top:12px;
-            color:#788293;
+            color:#647fa9;
             font-size:12px;
             line-height:1.8;
         }
@@ -1358,11 +1358,11 @@ function initFirstUseIntro() {
             gap:20px;
             margin-top:26px;
             padding-top:18px;
-            border-top:1px solid #eceff2;
+            border-top:1px solid #d0e3ff;
         }
         .first-use-note{
             margin:0;
-            color:#9aa2ae;
+            color:#7087ad;
             font-size:12px;
             line-height:1.6;
         }
@@ -1372,7 +1372,7 @@ function initFirstUseIntro() {
             height:42px;
             padding:0 22px;
             border:1px solid #334EAC;
-            border-radius:5px;
+            border-radius:11px;
             background:#334EAC;
             color:#fff;
             font-size:14px;
@@ -1411,7 +1411,7 @@ function initFirstUseIntro() {
             <div class="first-use-features">
                 <div class="first-use-feature">
                     <strong>知识点管理</strong>
-                    <span>在侧边栏添加、查看和删除知识点，建立自己的学习内容。</span>
+                    <span>通过顶部「知识管理」添加、查看和删除知识点，也可以先用 AI 测评。</span>
                 </div>
                 <div class="first-use-feature">
                     <strong>开始学习</strong>
@@ -1449,7 +1449,7 @@ function initFirstUseIntro() {
                     </div>
                 </div>
                 <div class="first-use-tools">
-                    更多学习工具中还提供函数图像、几何画板、科学计算器和在线实验室。
+                    顶部「学习工具」提供函数图像、几何画板、科学计算器和本站物理实验室；「AI伴学」可讲解错题。
                 </div>
             </div>
 
@@ -2553,48 +2553,86 @@ function computeCircuit(p){
  return {R,total,I,branchI,branchV,powers};
 }
 function drawCircuitDiagram(ctx,w,h,p,running,t){
- const v=computeCircuit(p),left=Math.max(44,w*.16),right=w-left,top=48,bottom=h-38,middle=w/2;
- const wire=(x,y,X,Y)=>{ctx.strokeStyle='#334EAC';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(X,Y);ctx.stroke();};
- const device=(x,y,index)=>{
+ const v=computeCircuit(p);
+ const left=Math.max(48,Math.round(w*.15)),right=w-left,mid=(left+right)/2;
+ const top=54,bottom=h-48,batteryY=(top+bottom)/2;
+ const wireColor='#334EAC';
+ function line(x1,y1,x2,y2){
+   ctx.strokeStyle=wireColor;ctx.lineWidth=3;ctx.beginPath();
+   ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+ }
+ function battery(upper,lower){
+   // 电池串接在左侧主回路：导线必须实际接到电池极板。
+   line(left,upper,left,batteryY-12);
+   line(left,batteryY+12,left,lower);
+   ctx.strokeStyle='#081F5C';ctx.lineWidth=3;
+   ctx.beginPath();
+   ctx.moveTo(left-18,batteryY-12);ctx.lineTo(left+18,batteryY-12);
+   ctx.moveTo(left-10,batteryY+12);ctx.lineTo(left+10,batteryY+12);
+   ctx.stroke();
+   ctx.fillStyle='#081F5C';ctx.font='bold 13px system-ui,sans-serif';
+   ctx.textAlign='left';
+   ctx.fillText('+',left+22,batteryY-7);
+   ctx.fillText('−',left+22,batteryY+17);
+ }
+ function device(x,y,index,width){
    const type=p.devices[index],label=circuitDevices[type]?.name||'电阻器',r=v.R[index];
-   ctx.fillStyle='#f5f9ff';ctx.strokeStyle='#334EAC';ctx.lineWidth=2;
-   ctx.beginPath();ctx.roundRect(x-45,y-22,90,44,10);ctx.fill();ctx.stroke();
-   if(type==='bulb'){
-     ctx.beginPath();ctx.arc(x-26,y,10,0,Math.PI*2);ctx.stroke();
-     ctx.beginPath();ctx.moveTo(x-33,y-7);ctx.lineTo(x-19,y+7);ctx.moveTo(x-19,y-7);ctx.lineTo(x-33,y+7);ctx.stroke();
+   const height=44,boxX=x-width/2,boxY=y-height/2;
+   ctx.fillStyle='#ffffff';ctx.strokeStyle=wireColor;ctx.lineWidth=2;
+   ctx.beginPath();ctx.roundRect(boxX,boxY,width,height,9);ctx.fill();ctx.stroke();
+   const hasBulb=type==='bulb';
+   if(hasBulb){
+     const iconX=boxX+14;
+     ctx.beginPath();ctx.arc(iconX,y,8,0,Math.PI*2);ctx.stroke();
+     ctx.beginPath();ctx.moveTo(iconX-5,y-5);ctx.lineTo(iconX+5,y+5);
+     ctx.moveTo(iconX+5,y-5);ctx.lineTo(iconX-5,y+5);ctx.stroke();
    }
-   ctx.fillStyle='#081F5C';ctx.textAlign='center';ctx.font='11px system-ui,sans-serif';
-   ctx.fillText(label,type==='bulb'?x+13:x,y-3);
-   ctx.fillText(r+' Ω',type==='bulb'?x+13:x,y+13);
-   ctx.font='12px system-ui,sans-serif';ctx.fillStyle='#334EAC';ctx.fillText(v.branchV[index].toFixed(1)+'V · '+v.branchI[index].toFixed(2)+'A',x,y+37);
- };
- // 电源以串接的标准电池符号表示：左竖线断开，正负号标出。
- wire(left,top,right,top);wire(right,top,right,bottom);wire(left,bottom,right,bottom);
- const batteryY=(top+bottom)/2;
- wire(left,top,left,batteryY-23);wire(left,batteryY+23,left,bottom);
- ctx.strokeStyle='#081F5C';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(left-17,batteryY-10);ctx.lineTo(left+17,batteryY-10);ctx.moveTo(left-10,batteryY+10);ctx.lineTo(left+10,batteryY+10);ctx.stroke();
- ctx.fillStyle='#081F5C';ctx.font='12px system-ui,sans-serif';ctx.textAlign='left';ctx.fillText('+',left+22,batteryY-6);ctx.fillText('−',left+22,batteryY+16);
+   ctx.fillStyle='#081F5C';ctx.textAlign='center';
+   ctx.font='11px system-ui,sans-serif';
+   ctx.fillText(label,hasBulb?x+10:x,y-3,hasBulb?width-34:width-8);
+   ctx.fillText(`${r} Ω`,hasBulb?x+10:x,y+12);
+   ctx.font='11px system-ui,sans-serif';ctx.fillStyle=wireColor;
+   ctx.fillText(`${v.branchV[index].toFixed(1)} V · ${v.branchI[index].toFixed(2)} A`,x,y+37);
+ }
  if(p.connection==='series'){
-   const x1=left+(right-left)*.32,x2=left+(right-left)*.70;
-   ctx.fillStyle='#f7faff';ctx.fillRect(x1-48,top-25,96,50);ctx.fillRect(x2-48,top-25,96,50);
-   device(x1,top,0);device(x2,top,1);
+   const span=right-left,deviceWidth=Math.min(94,Math.max(58,span*.28));
+   const x1=left+span*.29,x2=left+span*.71;
+   battery(top,bottom);
+   line(left,top,x1-deviceWidth/2,top);
+   line(x1+deviceWidth/2,top,x2-deviceWidth/2,top);
+   line(x2+deviceWidth/2,top,right,top);
+   line(right,top,right,bottom);line(right,bottom,left,bottom);
+   device(x1,top,0,deviceWidth);device(x2,top,1,deviceWidth);
  }else{
-   const y1=top+55,y2=bottom-62,mid=(left+right)/2;
-   ctx.fillStyle='#f7faff';ctx.fillRect(left-2,top+2,right-left+4,bottom-top-4);
-   wire(left,top,left,y1);wire(left,y1,right,y1);wire(right,y1,right,y2);wire(left,y2,right,y2);wire(left,y2,left,bottom);wire(right,y2,right,bottom);
-   // 分支上两种用电器分开排布，显示各自支路参数。
-   ctx.fillStyle='#f7faff';ctx.fillRect(mid-50,y1-25,100,52);ctx.fillRect(mid-50,y2-25,100,52);
-   device(mid,y1,0);device(mid,y2,1);
+   // 两支路有各自完整的左右导线，电池位于左侧公共干路。
+   const y1=top+34,y2=bottom-34;
+   const width=Math.min(96,Math.max(66,(right-left)*.32));
+   battery(y1,y2);
+   line(right,y1,right,y2);
+   line(left,y1,mid-width/2,y1);line(mid+width/2,y1,right,y1);
+   line(left,y2,mid-width/2,y2);line(mid+width/2,y2,right,y2);
+   device(mid,y1,0,width);device(mid,y2,1,width);
+   ctx.fillStyle=wireColor;
+   for(const y of [y1,y2]){
+     ctx.beginPath();ctx.arc(left,y,4,0,Math.PI*2);ctx.fill();
+     ctx.beginPath();ctx.arc(right,y,4,0,Math.PI*2);ctx.fill();
+   }
  }
  if(running){
-   const dots=Math.max(3,Math.min(12,Math.round(v.I*3)));
+   // 流动点只沿真实导线移动，不沿不存在的外围框线移动。
+   const paths=p.connection==='series'
+     ? [[[left,top],[right,top],[right,bottom],[left,bottom]],[[left,bottom],[left,batteryY+16]],[[left,batteryY-16],[left,top]]]
+     : [[[left,batteryY-16],[left,top+34],[right,top+34],[right,bottom-34],[left,bottom-34],[left,batteryY+16]]];
    ctx.fillStyle='#f59e0b';
-   for(let j=0;j<dots;j++){
-     const a=((j/dots)+(t*.15*v.I))%1;
-     const path=[[left,top,right,top],[right,top,right,bottom],[right,bottom,left,bottom],[left,bottom,left,top]];
-     const segment=Math.floor(a*4),f=(a*4)%1,edge=path[segment];
-     ctx.beginPath();ctx.arc(edge[0]+(edge[2]-edge[0])*f,edge[1]+(edge[3]-edge[1])*f,3,0,Math.PI*2);ctx.fill();
-   }
+   paths.forEach((path,k)=>{
+     for(let j=0;j<4;j++){
+       const f=((j/4+t*.18*Math.max(.25,v.I)+k*.1)%1)*(path.length-1);
+       const i=Math.min(path.length-2,Math.floor(f)),u=f-i;
+       const x=path[i][0]+(path[i+1][0]-path[i][0])*u;
+       const y=path[i][1]+(path[i+1][1]-path[i][1])*u;
+       ctx.beginPath();ctx.arc(x,y,3.3,0,Math.PI*2);ctx.fill();
+     }
+   });
  }
  return `${p.connection==='series'?'串联':'并联'}：总电阻 ${v.total.toFixed(2)} Ω｜总电流 ${v.I.toFixed(3)} A｜总功率 ${(p.voltage*v.I).toFixed(2)} W；用电器1：${v.branchV[0].toFixed(2)} V、${v.branchI[0].toFixed(3)} A、${v.powers[0].toFixed(2)} W；用电器2：${v.branchV[1].toFixed(2)} V、${v.branchI[1].toFixed(3)} A、${v.powers[1].toFixed(2)} W。`;
 }

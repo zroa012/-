@@ -2036,3 +2036,12 @@ body.study-lock-sidebar .main { margin-left: 0; width: 100%; }
 .native-lab-control select,.circuit-custom-label input{box-sizing:border-box;width:100%;min-height:40px;border:1px solid #d0e3ff;background:#fff;color:#081F5C;border-radius:9px;padding:8px 10px;font:inherit}
 .circuit-custom-label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#536781}
 .native-lab-readout{line-height:1.9;white-space:normal}
+
+/* V10: 电路图及实验控制区响应式统一 */
+.native-lab-canvas{max-width:100%;background:#f7faff}
+.native-lab-controls{grid-template-columns:repeat(4,minmax(0,1fr))}
+.native-lab-control{box-sizing:border-box}
+.native-lab-control select{font-size:13px;max-width:100%;text-overflow:ellipsis}
+@media(max-width:850px){.native-lab-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.native-lab-controls{grid-template-columns:1fr 1fr;gap:8px}.native-lab-control{padding:10px}.native-lab-canvas{height:300px}}
+@media(max-width:360px){.native-lab-controls{grid-template-columns:1fr}}
