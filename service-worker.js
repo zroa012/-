@@ -1,11 +1,11 @@
-const CACHE_NAME = 'smart-study-native-lab-v8';
+const CACHE_NAME = 'smart-study-v9-lab-and-usage';
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=20261112-lab-v8",
-  "./script.js?v=20261112-lab-v8",
-  "./markdown-renderer.js?v=20261112-lab-v8",
-  "./mathjax-tex-svg.js?v=20261112-lab-v8",
+  "./style.css?v=20261113-v9",
+  "./script.js?v=20261113-v9",
+  "./markdown-renderer.js?v=20261113-v9",
+  "./mathjax-tex-svg.js?v=20261113-v9",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
@@ -30,6 +30,8 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // 重要：每日 AI 额度必须实时从 D1 获取，绝不能被离线缓存。
+  if (url.pathname.startsWith('/api/')) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

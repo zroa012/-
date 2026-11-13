@@ -9,7 +9,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="style.css?v=20261112-lab-v8">
+    <link rel="stylesheet" href="style.css?v=20261113-v9">
 </head>
 <body>
 
@@ -499,7 +499,7 @@ int main() {
                             <button type="button" class="primary" id="nativeLabPlay" onclick="toggleNativeLab()">开始实验</button>
                             <button type="button" class="secondary" onclick="resetNativeLab()">重置实验</button>
                         </div>
-                        <p class="native-lab-note">这是用于理解物理规律的理想化模型：单摆按小角度近似公式计时，抛体忽略空气阻力，电路按理想直流电源与电阻计算。</p>
+                        <p class="native-lab-note">这是用于理解物理规律的理想化模型：单摆按小角度近似公式计时，抛体忽略空气阻力，电路按理想直流电源与定值电阻计算。灯泡、电动机和电热丝用固定等效电阻近似，未模拟启动电流、发热及电阻随温度变化。</p>
                     </div>
                 </div>
             </div>
@@ -638,9 +638,9 @@ window.MathJax = {
   startup: {typeset: false}
 };
 </script>
-<script defer src="mathjax-tex-svg.js?v=20261112-lab-v8"></script>
-<script src="markdown-renderer.js?v=20261112-lab-v8"></script>
-<script src="script.js?v=20261112-lab-v8"></script>
+<script defer src="mathjax-tex-svg.js?v=20261113-v9"></script>
+<script src="markdown-renderer.js?v=20261113-v9"></script>
+<script src="script.js?v=20261113-v9"></script>
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));

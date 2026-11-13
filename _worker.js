@@ -9,10 +9,10 @@ const SYSTEM = '你是耐心、严谨的中文AI伴学老师。优先启发式�
 // 最高费率 (RMB per 1M tokens): input uncached ¥2; output ¥8.
 // 账本记录保守费用上界；实际 DeepSeek 账单可能更低（缓存命中、非高峰）。
 const priceInput = 2, priceOutput = 8;
-const todayCST = () => new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10);
+const todayCST = () => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const money = micro => Number((Math.max(0, micro) / 1_000_000).toFixed(6));
 const usageInfo = (row, day) => ({
-  date: day, limit: 1, estimatedSpent: money(row?.spent_micro || 0),
+  date: day, serverTime: new Date().toISOString(), timeZone: 'Asia/Shanghai', limit: 1, estimatedSpent: money(row?.spent_micro || 0),
   remaining: money(LIMIT_MICRO - (row?.spent_micro || 0)),
   requests: row?.requests || 0, inputTokens: row?.input_tokens || 0,
   outputTokens: row?.output_tokens || 0,

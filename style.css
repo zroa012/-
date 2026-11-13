@@ -2031,3 +2031,8 @@ body.study-lock-sidebar .main { margin-left: 0; width: 100%; }
 .native-lab-actions button{min-height:42px;padding:10px 18px;border-radius:10px}
 .tool-card .native-lab-note{font-size:12px;color:#6b7b92;margin:12px 0 0;line-height:1.6}
 @media(max-width:600px){.native-lab-canvas{height:280px}.native-lab-tabs button{flex:1 1 auto;font-size:12px;padding:9px 8px}.native-lab-controls{grid-template-columns:1fr}}
+
+/* v9: 原生串并联电路实验 */
+.native-lab-control select,.circuit-custom-label input{box-sizing:border-box;width:100%;min-height:40px;border:1px solid #d0e3ff;background:#fff;color:#081F5C;border-radius:9px;padding:8px 10px;font:inherit}
+.circuit-custom-label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#536781}
+.native-lab-readout{line-height:1.9;white-space:normal}

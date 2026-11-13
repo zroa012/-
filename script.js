@@ -2365,16 +2365,35 @@ function renderAIUsage(usage) {
 }
 async function loadAIUsage(){
   try {
-    const r=await fetch('./api/ai/usage',{cache:'no-store'});
+    const r=await fetch('./api/ai/usage?nocache='+Date.now(),{cache:'no-store',headers:{'Accept':'application/json','Cache-Control':'no-cache'}});
     const data=await r.json();
     if(!r.ok)throw new Error(data.error||'读取失败');
+    if(!data.usage || !/^\d{4}-\d{2}-\d{2}$/.test(data.usage.date||''))throw new Error('服务器未返回有效日期');
+    // 日期由服务端按 Asia/Shanghai 决定，前端不擅自清零 D1 账本。
+    const expected=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    if(data.usage.date!==expected){
+      const note=document.getElementById('aiBudgetNotice');
+      if(note)note.textContent=`统计服务日期 ${data.usage.date} 与当前北京时间 ${expected} 不一致，请检查 Cloudflare 部署及服务器时间。`;
+      return;
+    }
     renderAIUsage(data.usage);
   } catch(err) {
     const el=document.getElementById('aiBudgetNotice');
     if(el)el.textContent='额度暂不可用：'+err.message;
   }
 }
-document.addEventListener('DOMContentLoaded',loadAIUsage);
+document.addEventListener('DOMContentLoaded',()=>{
+  loadAIUsage();
+  // 跨天自动刷新，同时兼顾手机后台、系统休眠后恢复。
+  let previousDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  setInterval(()=>{
+    const current=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    if(current!==previousDate){previousDate=current;loadAIUsage();}
+  },30000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadAIUsage();});
+  window.addEventListener('focus',loadAIUsage);
+  window.addEventListener('pageshow',loadAIUsage);
+});
 
 
 /* 新知识点 AI 入门测评：独立评估，不修改原学习评价和复习算法。 */
@@ -2513,15 +2532,82 @@ function initGraphKeypad(){
 document.addEventListener('DOMContentLoaded',()=>initGraphKeypad());
 
 
+
+/* v9 互动电路：电器以理想定值电阻模型模拟，不模拟灯泡热态非线性、短路和实际电源内阻。 */
+const circuitDevices={bulb:{name:'小灯泡',ohms:6},resistor:{name:'电阻器',ohms:10},motor:{name:'小电动机',ohms:12},heater:{name:'电热丝',ohms:20},custom:{name:'自定义电阻',ohms:null}};
+function circuitResistance(p,i){
+ const type=p.devices[i];return type==='custom'?Number(p.customResistance[i]||10):(circuitDevices[type]||circuitDevices.resistor).ohms;
+}
+function renderCircuitControls(){
+ const p=nativeLabState.circuit;
+ const chooser=(idx)=>`<label class="native-lab-control circuit-config"><span>用电器 ${idx+1}</span><select data-circuit-device="${idx}" aria-label="用电器 ${idx+1}">${Object.entries(circuitDevices).map(([k,v])=>`<option value="${k}" ${p.devices[idx]===k?'selected':''}>${v.name}${v.ohms?'（'+v.ohms+' Ω）':''}</option>`).join('')}</select>${p.devices[idx]==='custom'?`<label class="circuit-custom-label">电阻值（1–100 Ω）<input type="number" min="1" max="100" step="1" value="${p.customResistance[idx]}" data-circuit-resistance="${idx}"></label>`:''}</label>`;
+ return `<label class="native-lab-control circuit-config"><span>连接方式</span><select data-circuit-connection aria-label="电路连接方式"><option value="series" ${p.connection==='series'?'selected':''}>串联</option><option value="parallel" ${p.connection==='parallel'?'selected':''}>并联</option></select></label>${chooser(0)}${chooser(1)}`;
+}
+function computeCircuit(p){
+ const R=p.devices.map((_,i)=>circuitResistance(p,i));
+ const total=p.connection==='series'?R[0]+R[1]:1/(1/R[0]+1/R[1]);
+ const I=p.voltage/total;
+ const branchI=p.connection==='series'?[I,I]:R.map(r=>p.voltage/r);
+ const branchV=p.connection==='series'?R.map(r=>I*r):[p.voltage,p.voltage];
+ const powers=branchI.map((current,i)=>current*branchV[i]);
+ return {R,total,I,branchI,branchV,powers};
+}
+function drawCircuitDiagram(ctx,w,h,p,running,t){
+ const v=computeCircuit(p),left=Math.max(44,w*.16),right=w-left,top=48,bottom=h-38,middle=w/2;
+ const wire=(x,y,X,Y)=>{ctx.strokeStyle='#334EAC';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(X,Y);ctx.stroke();};
+ const device=(x,y,index)=>{
+   const type=p.devices[index],label=circuitDevices[type]?.name||'电阻器',r=v.R[index];
+   ctx.fillStyle='#f5f9ff';ctx.strokeStyle='#334EAC';ctx.lineWidth=2;
+   ctx.beginPath();ctx.roundRect(x-45,y-22,90,44,10);ctx.fill();ctx.stroke();
+   if(type==='bulb'){
+     ctx.beginPath();ctx.arc(x-26,y,10,0,Math.PI*2);ctx.stroke();
+     ctx.beginPath();ctx.moveTo(x-33,y-7);ctx.lineTo(x-19,y+7);ctx.moveTo(x-19,y-7);ctx.lineTo(x-33,y+7);ctx.stroke();
+   }
+   ctx.fillStyle='#081F5C';ctx.textAlign='center';ctx.font='11px system-ui,sans-serif';
+   ctx.fillText(label,type==='bulb'?x+13:x,y-3);
+   ctx.fillText(r+' Ω',type==='bulb'?x+13:x,y+13);
+   ctx.font='12px system-ui,sans-serif';ctx.fillStyle='#334EAC';ctx.fillText(v.branchV[index].toFixed(1)+'V · '+v.branchI[index].toFixed(2)+'A',x,y+37);
+ };
+ // 电源以串接的标准电池符号表示：左竖线断开，正负号标出。
+ wire(left,top,right,top);wire(right,top,right,bottom);wire(left,bottom,right,bottom);
+ const batteryY=(top+bottom)/2;
+ wire(left,top,left,batteryY-23);wire(left,batteryY+23,left,bottom);
+ ctx.strokeStyle='#081F5C';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(left-17,batteryY-10);ctx.lineTo(left+17,batteryY-10);ctx.moveTo(left-10,batteryY+10);ctx.lineTo(left+10,batteryY+10);ctx.stroke();
+ ctx.fillStyle='#081F5C';ctx.font='12px system-ui,sans-serif';ctx.textAlign='left';ctx.fillText('+',left+22,batteryY-6);ctx.fillText('−',left+22,batteryY+16);
+ if(p.connection==='series'){
+   const x1=left+(right-left)*.32,x2=left+(right-left)*.70;
+   ctx.fillStyle='#f7faff';ctx.fillRect(x1-48,top-25,96,50);ctx.fillRect(x2-48,top-25,96,50);
+   device(x1,top,0);device(x2,top,1);
+ }else{
+   const y1=top+55,y2=bottom-62,mid=(left+right)/2;
+   ctx.fillStyle='#f7faff';ctx.fillRect(left-2,top+2,right-left+4,bottom-top-4);
+   wire(left,top,left,y1);wire(left,y1,right,y1);wire(right,y1,right,y2);wire(left,y2,right,y2);wire(left,y2,left,bottom);wire(right,y2,right,bottom);
+   // 分支上两种用电器分开排布，显示各自支路参数。
+   ctx.fillStyle='#f7faff';ctx.fillRect(mid-50,y1-25,100,52);ctx.fillRect(mid-50,y2-25,100,52);
+   device(mid,y1,0);device(mid,y2,1);
+ }
+ if(running){
+   const dots=Math.max(3,Math.min(12,Math.round(v.I*3)));
+   ctx.fillStyle='#f59e0b';
+   for(let j=0;j<dots;j++){
+     const a=((j/dots)+(t*.15*v.I))%1;
+     const path=[[left,top,right,top],[right,top,right,bottom],[right,bottom,left,bottom],[left,bottom,left,top]];
+     const segment=Math.floor(a*4),f=(a*4)%1,edge=path[segment];
+     ctx.beginPath();ctx.arc(edge[0]+(edge[2]-edge[0])*f,edge[1]+(edge[3]-edge[1])*f,3,0,Math.PI*2);ctx.fill();
+   }
+ }
+ return `${p.connection==='series'?'串联':'并联'}：总电阻 ${v.total.toFixed(2)} Ω｜总电流 ${v.I.toFixed(3)} A｜总功率 ${(p.voltage*v.I).toFixed(2)} W；用电器1：${v.branchV[0].toFixed(2)} V、${v.branchI[0].toFixed(3)} A、${v.powers[0].toFixed(2)} W；用电器2：${v.branchV[1].toFixed(2)} V、${v.branchI[1].toFixed(3)} A、${v.powers[1].toFixed(2)} W。`;
+}
+
 /* v8 原生物理实验：独立于学习记录和 AI 计费逻辑 */
 const nativeLabState = {type:'pendulum',running:false,elapsed:0,lastStamp:0,raf:0,scale:1,
   pendulum:{length:1.5,gravity:9.8,angle:20},
   projectile:{speed:16,angle:45,gravity:9.8},
-  circuit:{voltage:6,resistance:10}};
+  circuit:{voltage:6,connection:'series',devices:['bulb','resistor'],customResistance:[10,10]}};
 const nativeLabFields={
   pendulum:[['length','摆长','m',0.5,3,0.1],['gravity','重力加速度','m/s²',1,20,0.2],['angle','初始摆角','°',5,40,1]],
   projectile:[['speed','初速度','m/s',3,30,1],['angle','抛射角','°',10,80,1],['gravity','重力加速度','m/s²',1,20,0.2]],
-  circuit:[['voltage','电压','V',1,24,1],['resistance','电阻','Ω',1,50,1]]
+  circuit:[['voltage','电源电压','V',1,24,1]]
 };
 function stopNativeLab(){const s=nativeLabState;s.running=false;s.lastStamp=0;if(s.raf)cancelAnimationFrame(s.raf);s.raf=0;const b=document.getElementById('nativeLabPlay');if(b)b.textContent='开始实验';}
 function setNativeLab(type){
@@ -2530,6 +2616,10 @@ function setNativeLab(type){
  document.querySelectorAll('[data-lab]').forEach(b=>{const active=b.dataset.lab===type;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
  const box=document.getElementById('nativeLabControls');if(!box)return;
  box.innerHTML=nativeLabFields[type].map(([key,label,unit,min,max,step])=>`<label class="native-lab-control"><span>${label}<strong data-lab-value="${key}">${nativeLabState[type][key]} ${unit}</strong></span><input type="range" min="${min}" max="${max}" step="${step}" value="${nativeLabState[type][key]}" data-lab-input="${key}" aria-label="${label}"></label>`).join('');
+ if(type==='circuit'){
+   box.insertAdjacentHTML('beforeend',renderCircuitControls());
+   const btn=document.getElementById('nativeLabPlay');if(btn)btn.textContent='开始电流动画';
+ }
  drawNativeLab();
 }
 function resetNativeLab(){stopNativeLab();nativeLabState.elapsed=0;drawNativeLab();}
@@ -2544,7 +2634,7 @@ function toggleNativeLab(){
 }
 function drawNativeLab(){
  const canvas=document.getElementById('nativeLabCanvas');if(!canvas)return;
- const w=Math.max(270,Math.round(canvas.getBoundingClientRect().width||550)),h=320,dpr=Math.min(devicePixelRatio||1,2);
+ const w=Math.max(270,Math.round(canvas.getBoundingClientRect().width||550)),h=Math.max(260,Math.round(canvas.getBoundingClientRect().height||320)),dpr=Math.min(devicePixelRatio||1,2);
  if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}
  const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
  ctx.fillStyle='#f7faff';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#dce6f5';ctx.lineWidth=1;
@@ -2571,15 +2661,8 @@ function drawNativeLab(){
    ctx.fillStyle='#334EAC';ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fill();
    summary=`射程：${R.toFixed(2)} m　最大高度：${H.toFixed(2)} m　飞行时间：${T.toFixed(2)} s　当前：${current.toFixed(1)} s`;
  }else{
-   const I=p.voltage/p.resistance,P=p.voltage*I;
-   const left=w*.18,right=w*.82,top=75,bottom=260;
-   ctx.strokeStyle='#334EAC';ctx.lineWidth=4;ctx.strokeRect(left,top,right-left,bottom-top);
-   ctx.fillStyle='#f7faff';ctx.fillRect(left-9,138,18,50);ctx.strokeStyle='#081F5C';ctx.lineWidth=3;
-   ctx.beginPath();ctx.moveTo(left-18,149);ctx.lineTo(left+18,149);ctx.moveTo(left-11,174);ctx.lineTo(left+11,174);ctx.stroke();
-   ctx.fillStyle='#f7faff';ctx.fillRect(w/2-43,top-17,86,35);ctx.fillStyle='#d0e3ff';ctx.fillRect(w/2-40,top-13,80,26);ctx.fillStyle='#081F5C';ctx.textAlign='center';ctx.fillText('R = '+p.resistance+' Ω',w/2,top+4);ctx.textAlign='start';
-   ctx.fillText('+',left+23,151);ctx.fillText('−',left+23,180);
-   if(s.running){const f=(t*I*.16)%1;const edges=[[left,top,right,top],[right,top,right,bottom],[right,bottom,left,bottom],[left,bottom,left,top]];for(let j=0;j<12;j++){let a=(j/12+f)%1,idx=Math.floor(a*4),r=(a*4)%1;const [x1,y1,x2,y2]=edges[idx];ctx.fillStyle='#f59e0b';ctx.beginPath();ctx.arc(x1+(x2-x1)*r,y1+(y2-y1)*r,4,0,Math.PI*2);ctx.fill();}}
-   summary=`电流 I = U / R = ${I.toFixed(3)} A　功率 P = U × I = ${P.toFixed(2)} W`;
+   summary=drawCircuitDiagram(ctx,w,h,p,s.running,t);
+
  }
  const out=document.getElementById('nativeLabReadout');if(out)out.textContent=summary;
 }
@@ -2589,8 +2672,20 @@ function initNativeLab(){
  document.getElementById('nativeLabControls')?.addEventListener('input',e=>{
    const key=e.target.dataset.labInput;if(!key)return;nativeLabState[nativeLabState.type][key]=Number(e.target.value);
    const cfg=nativeLabFields[nativeLabState.type].find(x=>x[0]===key);
-   document.querySelector(`[data-lab-value="${key}"]`).textContent=`${e.target.value} ${cfg[2]}`;
+   if(cfg)document.querySelector(`[data-lab-value="${key}"]`).textContent=`${e.target.value} ${cfg[2]}`;
    stopNativeLab();nativeLabState.elapsed=0;drawNativeLab();
+ });
+ document.getElementById('nativeLabControls')?.addEventListener('change',e=>{
+   const field=e.target;
+   const p=nativeLabState.circuit;
+   if(field.matches('[data-circuit-connection]'))p.connection=field.value;
+   else if(field.matches('[data-circuit-device]'))p.devices[Number(field.dataset.circuitDevice)]=field.value;
+   else if(field.matches('[data-circuit-resistance]'))p.customResistance[Number(field.dataset.circuitResistance)]=Math.max(1,Math.min(100,Number(field.value)||10));
+   else return;
+   stopNativeLab();nativeLabState.elapsed=0;
+   document.getElementById('nativeLabControls').querySelectorAll('.circuit-config').forEach(el=>el.remove());
+   document.getElementById('nativeLabControls').insertAdjacentHTML('beforeend',renderCircuitControls());
+   drawNativeLab();
  });
  setNativeLab('pendulum');
  if('ResizeObserver' in window){new ResizeObserver(()=>{if(document.getElementById('tools')?.classList.contains('active'))drawNativeLab();}).observe(document.getElementById('nativeLabCanvas'));}
