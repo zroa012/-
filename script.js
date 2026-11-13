@@ -2553,88 +2553,108 @@ function computeCircuit(p){
  return {R,total,I,branchI,branchV,powers};
 }
 function drawCircuitDiagram(ctx,w,h,p,running,t){
- const v=computeCircuit(p);
+ const result=computeCircuit(p);
  const left=Math.max(48,Math.round(w*.15)),right=w-left,mid=(left+right)/2;
- const top=54,bottom=h-48,batteryY=(top+bottom)/2;
- const wireColor='#334EAC';
- function line(x1,y1,x2,y2){
-   ctx.strokeStyle=wireColor;ctx.lineWidth=3;ctx.beginPath();
+ const top=54,bottom=h-48,wireColor='#334EAC';
+ const wire=(x1,y1,x2,y2)=>{
+   ctx.strokeStyle=wireColor;ctx.lineWidth=2.8;ctx.beginPath();
    ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
- }
- function battery(upper,lower){
-   // 电池串接在左侧主回路：导线必须实际接到电池极板。
-   line(left,upper,left,batteryY-12);
-   line(left,batteryY+12,left,lower);
-   ctx.strokeStyle='#081F5C';ctx.lineWidth=3;
-   ctx.beginPath();
-   ctx.moveTo(left-18,batteryY-12);ctx.lineTo(left+18,batteryY-12);
-   ctx.moveTo(left-10,batteryY+12);ctx.lineTo(left+10,batteryY+12);
-   ctx.stroke();
-   ctx.fillStyle='#081F5C';ctx.font='bold 13px system-ui,sans-serif';
-   ctx.textAlign='left';
-   ctx.fillText('+',left+22,batteryY-7);
-   ctx.fillText('−',left+22,batteryY+17);
- }
- function device(x,y,index,width){
-   const type=p.devices[index],label=circuitDevices[type]?.name||'电阻器',r=v.R[index];
-   const height=44,boxX=x-width/2,boxY=y-height/2;
-   ctx.fillStyle='#ffffff';ctx.strokeStyle=wireColor;ctx.lineWidth=2;
-   ctx.beginPath();ctx.roundRect(boxX,boxY,width,height,9);ctx.fill();ctx.stroke();
-   const hasBulb=type==='bulb';
-   if(hasBulb){
-     const iconX=boxX+14;
-     ctx.beginPath();ctx.arc(iconX,y,8,0,Math.PI*2);ctx.stroke();
-     ctx.beginPath();ctx.moveTo(iconX-5,y-5);ctx.lineTo(iconX+5,y+5);
-     ctx.moveTo(iconX+5,y-5);ctx.lineTo(iconX-5,y+5);ctx.stroke();
+ };
+ const node=(x,y)=>{
+   ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle=wireColor;ctx.fill();
+ };
+ const batteryVertical=(x,y,upper,lower)=>{
+   const gap=13;
+   wire(x,upper,x,y-gap);wire(x,y+gap,x,lower);
+   ctx.strokeStyle='#081F5C';ctx.lineWidth=2.8;ctx.beginPath();
+   ctx.moveTo(x-18,y-gap);ctx.lineTo(x+18,y-gap);
+   ctx.moveTo(x-10,y+gap);ctx.lineTo(x+10,y+gap);ctx.stroke();
+   ctx.fillStyle='#081F5C';ctx.font='12px system-ui,sans-serif';ctx.textAlign='left';
+   ctx.fillText('+',x+22,y-gap+3);ctx.fillText('−',x+22,y+gap+3);
+ };
+ const batteryHorizontal=(x,y,xStart,xEnd)=>{
+   // 第三条独立的电源支路横跨同一对公共节点，电流可分别经过两个负载回流。
+   const gap=13;
+   wire(xStart,y,x-gap,y);wire(x+gap,y,xEnd,y);
+   ctx.strokeStyle='#081F5C';ctx.lineWidth=2.8;ctx.beginPath();
+   ctx.moveTo(x-gap,y-18);ctx.lineTo(x-gap,y+18);
+   ctx.moveTo(x+gap,y-10);ctx.lineTo(x+gap,y+10);ctx.stroke();
+   ctx.fillStyle='#081F5C';ctx.font='12px system-ui,sans-serif';ctx.textAlign='center';
+   ctx.fillText('+',x-gap,y-24);ctx.fillText('−',x+gap,y-24);
+ };
+ const device=(x,y,index,width)=>{
+   const type=p.devices[index],label=circuitDevices[type]?.name||'电阻器',r=result.R[index];
+   const bh=42,x0=x-width/2,y0=y-bh/2;
+   ctx.fillStyle='#fff';ctx.strokeStyle=wireColor;ctx.lineWidth=2;
+   ctx.beginPath();ctx.roundRect(x0,y0,width,bh,9);ctx.fill();ctx.stroke();
+   const bulb=type==='bulb';
+   if(bulb){
+     const cx=x0+15;ctx.beginPath();ctx.arc(cx,y,8,0,Math.PI*2);ctx.stroke();
+     ctx.beginPath();ctx.moveTo(cx-5,y-5);ctx.lineTo(cx+5,y+5);
+     ctx.moveTo(cx+5,y-5);ctx.lineTo(cx-5,y+5);ctx.stroke();
    }
-   ctx.fillStyle='#081F5C';ctx.textAlign='center';
-   ctx.font='11px system-ui,sans-serif';
-   ctx.fillText(label,hasBulb?x+10:x,y-3,hasBulb?width-34:width-8);
-   ctx.fillText(`${r} Ω`,hasBulb?x+10:x,y+12);
-   ctx.font='11px system-ui,sans-serif';ctx.fillStyle=wireColor;
-   ctx.fillText(`${v.branchV[index].toFixed(1)} V · ${v.branchI[index].toFixed(2)} A`,x,y+37);
- }
+   ctx.fillStyle='#081F5C';ctx.font='11px system-ui,sans-serif';ctx.textAlign='center';
+   const tx=bulb?x+10:x;
+   ctx.fillText(label,tx,y-3,bulb?width-34:width-8);
+   ctx.fillText(`${r} Ω`,tx,y+12);
+   ctx.fillStyle=wireColor;ctx.fillText(`${result.branchV[index].toFixed(1)} V · ${result.branchI[index].toFixed(2)} A`,x,y+35);
+ };
+ let animationPaths=[];
  if(p.connection==='series'){
-   const span=right-left,deviceWidth=Math.min(94,Math.max(58,span*.28));
-   const x1=left+span*.29,x2=left+span*.71;
-   battery(top,bottom);
-   line(left,top,x1-deviceWidth/2,top);
-   line(x1+deviceWidth/2,top,x2-deviceWidth/2,top);
-   line(x2+deviceWidth/2,top,right,top);
-   line(right,top,right,bottom);line(right,bottom,left,bottom);
-   device(x1,top,0,deviceWidth);device(x2,top,1,deviceWidth);
+   // 单个闭合回路：左侧电源，顶部两个负载前后相接。
+   const span=right-left,width=Math.min(94,Math.max(55,span*.26));
+   const x1=left+span*.28,x2=left+span*.72,by=(top+bottom)/2;
+   batteryVertical(left,by,top,bottom);
+   wire(left,top,x1-width/2,top);
+   wire(x1+width/2,top,x2-width/2,top);
+   wire(x2+width/2,top,right,top);
+   wire(right,top,right,bottom);wire(right,bottom,left,bottom);
+   device(x1,top,0,width);device(x2,top,1,width);
+   animationPaths=[
+     [[left,top],[x1-width/2,top]],
+     [[x1+width/2,top],[x2-width/2,top]],
+     [[x2+width/2,top],[right,top],[right,bottom],[left,bottom],[left,by+13]]
+   ];
  }else{
-   // 两支路有各自完整的左右导线，电池位于左侧公共干路。
-   const y1=top+34,y2=bottom-34;
-   const width=Math.min(96,Math.max(66,(right-left)*.32));
-   battery(y1,y2);
-   line(right,y1,right,y2);
-   line(left,y1,mid-width/2,y1);line(mid+width/2,y1,right,y1);
-   line(left,y2,mid-width/2,y2);line(mid+width/2,y2,right,y2);
+   // 真正的并联拓扑：左、右公共母线，两个负载各占一条独立支路；
+   // 电源为第三条支路（顶端），不得把电池放在两条负载之间的公共母线上。
+   const yBattery=top+12,y1=top+102,y2=bottom-26;
+   const width=Math.min(98,Math.max(64,(right-left)*.30));
+   const x0=mid-width/2,x1=mid+width/2;
+   wire(left,yBattery,left,y2);wire(right,yBattery,right,y2);
+   batteryHorizontal(mid,yBattery,left,right);
+   wire(left,y1,x0,y1);wire(x1,y1,right,y1);
+   wire(left,y2,x0,y2);wire(x1,y2,right,y2);
    device(mid,y1,0,width);device(mid,y2,1,width);
-   ctx.fillStyle=wireColor;
-   for(const y of [y1,y2]){
-     ctx.beginPath();ctx.arc(left,y,4,0,Math.PI*2);ctx.fill();
-     ctx.beginPath();ctx.arc(right,y,4,0,Math.PI*2);ctx.fill();
-   }
+   node(left,y1);node(left,y2);node(right,y1);node(right,y2);
+   animationPaths=[
+     [[left,yBattery],[left,y1],[x0,y1]],
+     [[x1,y1],[right,y1],[right,yBattery]],
+     [[left,y1],[left,y2],[x0,y2]],
+     [[x1,y2],[right,y2],[right,y1]]
+   ];
  }
  if(running){
-   // 流动点只沿真实导线移动，不沿不存在的外围框线移动。
-   const paths=p.connection==='series'
-     ? [[[left,top],[right,top],[right,bottom],[left,bottom]],[[left,bottom],[left,batteryY+16]],[[left,batteryY-16],[left,top]]]
-     : [[[left,batteryY-16],[left,top+34],[right,top+34],[right,bottom-34],[left,bottom-34],[left,batteryY+16]]];
-   ctx.fillStyle='#f59e0b';
-   paths.forEach((path,k)=>{
-     for(let j=0;j<4;j++){
-       const f=((j/4+t*.18*Math.max(.25,v.I)+k*.1)%1)*(path.length-1);
-       const i=Math.min(path.length-2,Math.floor(f)),u=f-i;
-       const x=path[i][0]+(path[i+1][0]-path[i][0])*u;
-       const y=path[i][1]+(path[i+1][1]-path[i][1])*u;
-       ctx.beginPath();ctx.arc(x,y,3.3,0,Math.PI*2);ctx.fill();
+   // 只在真实导线上显示移动点；设备方框与电源符号不作为动画线路。
+   ctx.fillStyle='#e49b17';
+   animationPaths.forEach((path,k)=>{
+     const lengths=[],total=path.slice(1).reduce((sum,pt,i)=>{
+       const seg=Math.hypot(pt[0]-path[i][0],pt[1]-path[i][1]);lengths.push(seg);return sum+seg;
+     },0);
+     if(!total)return;
+     for(let j=0;j<3;j++){
+       let d=((j/3+t*.12*Math.max(.2,result.I)+k*.17)%1)*total;
+       for(let i=0;i<lengths.length;i++){
+         if(d<=lengths[i]){
+           const a=path[i],b=path[i+1],u=d/lengths[i];
+           ctx.beginPath();ctx.arc(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,3.2,0,Math.PI*2);ctx.fill();break;
+         }
+         d-=lengths[i];
+       }
      }
    });
  }
- return `${p.connection==='series'?'串联':'并联'}：总电阻 ${v.total.toFixed(2)} Ω｜总电流 ${v.I.toFixed(3)} A｜总功率 ${(p.voltage*v.I).toFixed(2)} W；用电器1：${v.branchV[0].toFixed(2)} V、${v.branchI[0].toFixed(3)} A、${v.powers[0].toFixed(2)} W；用电器2：${v.branchV[1].toFixed(2)} V、${v.branchI[1].toFixed(3)} A、${v.powers[1].toFixed(2)} W。`;
+ return `${p.connection==='series'?'串联':'并联'}：总电阻 ${result.total.toFixed(2)} Ω｜总电流 ${result.I.toFixed(3)} A｜总功率 ${(p.voltage*result.I).toFixed(2)} W；用电器1：${result.branchV[0].toFixed(2)} V、${result.branchI[0].toFixed(3)} A、${result.powers[0].toFixed(2)} W；用电器2：${result.branchV[1].toFixed(2)} V、${result.branchI[1].toFixed(3)} A、${result.powers[1].toFixed(2)} W。`;
 }
 
 /* v8 原生物理实验：独立于学习记录和 AI 计费逻辑 */

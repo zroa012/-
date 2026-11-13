@@ -1,11 +1,11 @@
-const CACHE_NAME = 'smart-study-v10-circuit-and-intro';
+const CACHE_NAME = 'smart-study-v11-parallel-topology';
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=20261113-v10",
-  "./script.js?v=20261113-v10",
-  "./markdown-renderer.js?v=20261113-v10",
-  "./mathjax-tex-svg.js?v=20261113-v10",
+  "./style.css?v=20261113-v11",
+  "./script.js?v=20261113-v11",
+  "./markdown-renderer.js?v=20261113-v11",
+  "./mathjax-tex-svg.js?v=20261113-v11",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
